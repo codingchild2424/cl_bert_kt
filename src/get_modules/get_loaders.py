@@ -1,7 +1,8 @@
 from torch.utils.data import DataLoader, random_split, Subset, ConcatDataset
-from utils import pid_collate_fn, pid_diff_collate_fn
+#from utils import pid_collate_fn, pid_diff_collate_fn
 
 from dataloaders.pid_loader import PID_LOADER
+from dataloaders.sim_loader import SIM_LOADER
 
 def get_loaders(config, idx=None):
 
@@ -13,27 +14,27 @@ def get_loaders(config, idx=None):
     # pid loaders
     if config.dataset_name == "assist09":
         dataset_dir = "../datasets/assist09/preprocessed_df.csv"
-        dataset = PID_LOADER(config.max_seq_len, dataset_dir)
     elif config.dataset_name == "assist12":
         dataset_dir = "../datasets/assist12/preprocessed_df.csv"
-        dataset = PID_LOADER(config.max_seq_len, dataset_dir)
     elif config.dataset_name == "assist17":
         dataset_dir = "../datasets/assist17/preprocessed_df.csv"
-        dataset = PID_LOADER(config.max_seq_len, dataset_dir)
     elif config.dataset_name == "algebra05":
         dataset_dir = "../datasets/algebra05/preprocessed_df.csv"
-        dataset = PID_LOADER(config.max_seq_len, dataset_dir)
     elif config.dataset_name == "algebra06":
         dataset_dir = "../datasets/bridge_algebra06/preprocessed_df.csv"
-        dataset = PID_LOADER(config.max_seq_len, dataset_dir)
     elif config.dataset_name == "ednet":
         dataset_dir = "../datasets/ednet/preprocessed_df.csv"
+    
+    # pid_loader or sim_loader
+    if config.use_augment:
+        dataset = SIM_LOADER(config.max_seq_len, dataset_dir)
+    else:
         dataset = PID_LOADER(config.max_seq_len, dataset_dir)
 
     num_q = dataset.num_q
     num_r = dataset.num_r
     num_pid = dataset.num_pid
-    collate = dataset.collate_fn
+    #collate = dataset.collate_fn
 
     # 2. data chunk
 

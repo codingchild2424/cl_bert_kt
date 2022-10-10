@@ -38,8 +38,11 @@ def define_argparser():
     p.add_argument('--grad_acc', type=bool, default=False)
     p.add_argument('--grad_acc_iter', type=int, default=2)
 
-    #five_fold cross validation
+    # five_fold cross validation
     p.add_argument('--fivefold', type=bool, default=False)
+
+    # augmentation
+    p.add_argument('--use_augment', type=bool, default=False)
 
     config = p.parse_args()
 

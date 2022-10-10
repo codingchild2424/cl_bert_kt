@@ -12,4 +12,5 @@ train.py \
 --grad_acc_iter 4 \
 --fivefold True \
 --n_epochs 1000 \
---cl_lambda 0.2
+--cl_lambda 0.2 \
+--use_augment True
