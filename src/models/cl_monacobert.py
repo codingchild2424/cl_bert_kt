@@ -509,11 +509,25 @@ class CL_MonaCoBERT(nn.Module):
 
         return pos_emb
 
-    def forward(self, q, r, pid, negative_r_seq, mask):
+    def forward(
+        self, 
+        q, 
+        r, 
+        pid, 
+        negative_r_seq, 
+        mask,
+        aug_q_i=None,
+        aug_q_j=None,
+        aug_r_i=None,
+        aug_r_j=None,
+        aug_pid_i=None,
+        aug_pid_j=None,
+        mask_i=None,
+        mask_j=None
+        ):
         # |q| = (bs, n)
         # |r| = (bs, n)
-        # |mask| = (bs, n)
-
+        # |mask| = (bs, n)       
 
         emb = self.emb_q(q) + self.emb_r(r) + self.emb_pid(pid) + self._positional_embedding(q)
         # original monacobert
@@ -530,15 +544,16 @@ class CL_MonaCoBERT(nn.Module):
         ################
 
         if self.training:
-            compare_emb = self.emb_c_q(q) + self.emb_c_r(r) + self.emb_c_pid(pid) + self._positional_embedding(q)
-            positive_emb = self.emb_p_q(q) + self.emb_p_r(r) + self.emb_p_pid(pid) + self._positional_embedding(q)
+            
+            compare_emb = self.emb_c_q(aug_q_i) + self.emb_c_r(aug_r_i) + self.emb_c_pid(aug_pid_i) + self._positional_embedding(q)
+            positive_emb = self.emb_p_q(aug_q_j) + self.emb_p_r(aug_r_j) + self.emb_p_pid(aug_pid_j) + self._positional_embedding(q)
             negative_emb = self.emb_n_q(q) + self.emb_n_r(negative_r_seq) + self.emb_n_pid(pid) + self._positional_embedding(q)
             # |emb| = |negative_emb| = (bs, n, emb_size)
 
             ## compare ##
             c_z = self.emb_dropout(compare_emb)
             # |c_z| = (bs, n, emb_size)
-            c_z, _ = self.compare_encoder(c_z, mask)
+            c_z, _ = self.compare_encoder(c_z, mask_i)
             # |c_z| = (bs, n, hs)
             # average pooling layer
             pooled_c_z = (c_z * mask.unsqueeze(-1)).sum(1) / mask.sum(-1).unsqueeze(-1)
@@ -546,7 +561,7 @@ class CL_MonaCoBERT(nn.Module):
             ## positive ##
             p_z = self.emb_dropout(positive_emb)
             # |p_z| = (bs, n, emb_size)
-            p_z, _ = self.positive_encoder(p_z, mask)
+            p_z, _ = self.positive_encoder(p_z, mask_j)
             # |p_z| = (bs, n, hs)
             # average pooling layer
             pooled_p_z = (p_z * mask.unsqueeze(-1)).sum(1) / mask.sum(-1).unsqueeze(-1)
