@@ -27,7 +27,7 @@ def get_loaders(config, idx=None):
     
     # pid_loader or sim_loader
     if config.use_augment:
-        dataset = SIM_LOADER(config.max_seq_len, dataset_dir)
+        dataset = SIM_LOADER(config.max_seq_len, dataset_dir, config)
     else:
         dataset = PID_LOADER(config.max_seq_len, dataset_dir)
 

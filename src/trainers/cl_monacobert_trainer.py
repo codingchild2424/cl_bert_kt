@@ -134,15 +134,14 @@ class CL_MonaCoBERT_Trainer():
         y_trues, y_scores = [], []
         loss_list = []
 
-        for idx, data in enumerate(tqdm(train_loader)):
+        for idx, batch in enumerate(tqdm(train_loader)):
             self.model.train()
-            q_seqs, r_seqs, pid_seqs, negative_r_seqs, mask_seqs = data
 
-            q_seqs = q_seqs.to(self.device) # |q_seqs| = (bs, n)
-            r_seqs = r_seqs.to(self.device) # |r_seqs| = (bs, n)
-            pid_seqs = pid_seqs.to(self.device) # |pid_seqs| = (bs, n)
-            negative_r_seqs = negative_r_seqs.to(self.device)
-            mask_seqs = mask_seqs.to(self.device) # |mask_seqs| = (bs, n)
+            q_seqs = batch["concepts"].to(self.device)
+            r_seqs = batch["responses"].to(self.device)
+            pid_seqs = batch["questions"].to(self.device)
+            negative_r_seqs = batch["negative_responses"].to(self.device)
+            mask_seqs = batch["masks"].to(self.device)
 
             # for correct
             real_seqs = r_seqs.clone()
@@ -218,15 +217,14 @@ class CL_MonaCoBERT_Trainer():
         loss_list = []
 
         with torch.no_grad():
-            for data in tqdm(valid_loader):
+            for batch in tqdm(valid_loader):
                 self.model.eval()
-                q_seqs, r_seqs, pid_seqs, negative_r_seqs, mask_seqs = data
                 
-                q_seqs = q_seqs.to(self.device)
-                r_seqs = r_seqs.to(self.device)
-                pid_seqs = pid_seqs.to(self.device)
-                negative_r_seqs = negative_r_seqs.to(self.device)
-                mask_seqs = mask_seqs.to(self.device)
+                q_seqs = batch["concepts"].to(self.device)
+                r_seqs = batch["responses"].to(self.device)
+                pid_seqs = batch["questions"].to(self.device)
+                negative_r_seqs = batch["negative_responses"].to(self.device)
+                mask_seqs = batch["masks"].to(self.device)
 
                 real_seqs = r_seqs.clone()
 
@@ -272,15 +270,14 @@ class CL_MonaCoBERT_Trainer():
         loss_list = []
 
         with torch.no_grad():
-            for data in tqdm(test_loader):
+            for batch in tqdm(test_loader):
                 self.model.eval()
-                q_seqs, r_seqs, pid_seqs, negative_r_seqs, mask_seqs = data
-                
-                q_seqs = q_seqs.to(self.device)
-                r_seqs = r_seqs.to(self.device)
-                pid_seqs = pid_seqs.to(self.device)
-                negative_r_seqs = negative_r_seqs.to(self.device)
-                mask_seqs = mask_seqs.to(self.device)
+
+                q_seqs = batch["concepts"].to(self.device)
+                r_seqs = batch["responses"].to(self.device)
+                pid_seqs = batch["questions"].to(self.device)
+                negative_r_seqs = batch["negative_responses"].to(self.device)
+                mask_seqs = batch["masks"].to(self.device)
 
                 real_seqs = r_seqs.clone()
 

@@ -8,11 +8,15 @@ from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset
 from utils import pid_collate_fn
 
+from modules.augment_seq import augment_seq_func
+
 class SIM_LOADER(Dataset):
-    def __init__(self, max_seq_len, dataset_dir) -> None:
-        super().__init__()
+    def __init__(self, max_seq_len, dataset_dir, config) -> None:
+        super(SIM_LOADER, self).__init__()
 
         self.dataset_dir = dataset_dir
+
+        self.config = config
         
         self.q_seqs, self.r_seqs, self.q_list, self.u_list, self.r_list, self.q2idx, \
             self.u2idx, self.pid_seqs, self.pid_list, self.negative_r_seqs = self.preprocess()
@@ -30,29 +34,6 @@ class SIM_LOADER(Dataset):
 
         self.len = len(self.q_seqs)
 
-    # augmentation을 위한 추가
-    # def __getitem_internal__(self, index):
-        
-    #     if self.eval_mode:
-    #         return {
-    #             "concepts": (self.q_seqs,),
-    #             "questions": (self.pid_seqs,),
-    #             "responses": (self.r_seqs,),
-    #             "negative_responses": (self.negative_r_seqs,)
-    #         }
-    #     else:
-    #         return {
-    #             "concepts": (self.q_seqs,),
-    #             "questions": (self.pid_seqs,),
-    #             "responses": (self.r_seqs,),
-    #             "negative_responses": (self.negative_r_seqs,)
-    #         }
-
-    def __getitem__(self, index):
-        return self.q_seqs[index], self.r_seqs[index], self.pid_seqs[index], self.negative_r_seqs[index], self.mask_seqs[index]
-
-    # def __getitem__(self, index):
-    #     return self.__getitem_internal__(index)
 
     def __len__(self):
         return self.len
@@ -180,3 +161,38 @@ class SIM_LOADER(Dataset):
                 pad_proc_pid_seqs * mask_seqs, pad_proc_negative_r_seqs * mask_seqs
 
         return pad_proc_q_seqs, pad_proc_r_seqs, pad_proc_pid_seqs, pad_proc_negative_r_seqs, mask_seqs
+
+
+    # augmentation을 위한 추가
+    def __getitem_internal__(self, index):
+
+        '''
+        그냥 train, test 상관없이 augmentation 만들고,
+        valid와 test에서는 쓰지 않기
+        '''
+
+        t1 = augment_seq_func(
+            self.q_seqs[index],
+            self.r_seqs[index],
+            self.pid_seqs[index],
+            self.config
+        )
+
+        t2 = augment_seq_func(
+            self.q_seqs[index],
+            self.r_seqs[index],
+            self.pid_seqs[index],
+            self.config
+        )
+
+
+        return {
+            "concepts": self.q_seqs[index], 
+            "responses": self.r_seqs[index], 
+            "questions": self.pid_seqs[index], 
+            "negative_responses": self.negative_r_seqs[index], 
+            "masks": self.mask_seqs[index]
+            }
+
+    def __getitem__(self, index):
+        return self.__getitem_internal__(index)
