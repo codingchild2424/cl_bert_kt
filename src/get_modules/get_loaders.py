@@ -116,19 +116,19 @@ def get_loaders(config, idx=None):
         train_dataset,
         batch_size = config.batch_size,
         shuffle = True, # train_loader use shuffle
-        collate_fn = collate
+        #collate_fn = collate
     )
     valid_loader = DataLoader(
         valid_dataset,
         batch_size = config.batch_size,
         shuffle = False, # valid_loader don't use shuffle
-        collate_fn = collate
+        #collate_fn = collate
     )
     test_loader = DataLoader(
         test_dataset,
         batch_size = config.batch_size,
         shuffle = False, # test_loader don't use shuffle
-        collate_fn = collate
+        #collate_fn = collate
     )
 
     return train_loader, valid_loader, test_loader, num_q, num_r, num_pid

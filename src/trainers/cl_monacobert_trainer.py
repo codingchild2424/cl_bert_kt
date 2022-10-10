@@ -173,6 +173,9 @@ class CL_MonaCoBERT_Trainer():
             #|y_hat| = (bs * n - n_mlm_idxs)
             correct = torch.masked_select(real_seqs, mlm_idxs)
             #|correct| = (bs * n - n_mlm_idxs)
+
+            correct = torch.tensor(correct, dtype=torch.float)
+
             bce_loss = self.binary_cross_entropy(y_hat, correct)
             # |loss| = (1)
 
@@ -245,6 +248,8 @@ class CL_MonaCoBERT_Trainer():
                 y_hat = torch.masked_select(y_hat, mlm_idxs)
                 correct = torch.masked_select(real_seqs, mlm_idxs)
 
+                correct = torch.tensor(correct, dtype=torch.float)
+
                 loss = self.binary_cross_entropy(y_hat, correct)
 
                 y_trues.append(correct)
@@ -296,6 +301,8 @@ class CL_MonaCoBERT_Trainer():
 
                 y_hat = torch.masked_select(y_hat, mlm_idxs)
                 correct = torch.masked_select(real_seqs, mlm_idxs)
+
+                correct = torch.tensor(correct, dtype=torch.float)
 
                 loss = loss = self.binary_cross_entropy(y_hat, correct)
 

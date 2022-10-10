@@ -1,6 +1,10 @@
 import numpy as np
 import pandas as pd
 
+import torch
+
+from torch.nn.utils.rnn import pad_sequence
+
 from torch.utils.data import Dataset
 from utils import pid_collate_fn
 
@@ -21,7 +25,7 @@ class PID_LOADER(Dataset):
 
         self.collate_fn = pid_collate_fn
 
-        self.q_seqs, self.r_seqs, self.pid_seqs, self.negative_r_seqs = \
+        self.q_seqs, self.r_seqs, self.pid_seqs, self.negative_r_seqs, self.mask_seqs = \
             self.match_seq_len(self.q_seqs, self.r_seqs, self.pid_seqs, self.negative_r_seqs, max_seq_len)
 
         self.len = len(self.q_seqs)
@@ -45,7 +49,7 @@ class PID_LOADER(Dataset):
     #         }
 
     def __getitem__(self, index):
-        return self.q_seqs[index], self.r_seqs[index], self.pid_seqs[index], self.negative_r_seqs[index]
+        return self.q_seqs[index], self.r_seqs[index], self.pid_seqs[index], self.negative_r_seqs[index], self.mask_seqs[index]
 
     # def __getitem__(self, index):
     #     return self.__getitem_internal__(index)
@@ -56,6 +60,11 @@ class PID_LOADER(Dataset):
     def preprocess(self):
         df = pd.read_csv(self.dataset_dir, encoding="ISO-8859-1", sep='\t')
         df = df[(df["correct"] == 0) | (df["correct"] == 1)]
+
+        # zero for padding
+        df["user_id"] += 1
+        df["skill_id"] += 1
+        df["item_id"] += 1
 
         u_list = np.unique(df["user_id"].values)
         q_list = np.unique(df["skill_id"].values)
@@ -136,4 +145,38 @@ class PID_LOADER(Dataset):
                 )
             )
 
-        return proc_q_seqs, proc_r_seqs, proc_pid_seqs, proc_negative_r_seqs
+        # mask 추출 및 padding 작업
+        pad_proc_q_seqs = []
+        pad_proc_r_seqs = []
+        pad_proc_pid_seqs = []
+        pad_proc_negative_r_seqs = []
+
+        for proc_q_seq, proc_r_seq, proc_pid_seq, proc_negative_r_seq in zip(proc_q_seqs, proc_r_seqs, proc_pid_seqs, proc_negative_r_seqs):
+
+            #torch.tensor(aug_q_seq_1, dtype=torch.long)
+            pad_proc_q_seqs.append(torch.tensor(proc_q_seq, dtype=torch.long))
+            pad_proc_r_seqs.append(torch.tensor(proc_r_seq, dtype=torch.long))
+            pad_proc_pid_seqs.append(torch.tensor(proc_pid_seq, dtype=torch.long))
+            pad_proc_negative_r_seqs.append(torch.tensor(proc_negative_r_seq, dtype=torch.long))
+
+        pad_proc_q_seqs = pad_sequence(
+            pad_proc_q_seqs, batch_first=True, padding_value=pad_val
+        )
+        pad_proc_r_seqs = pad_sequence(
+            pad_proc_r_seqs, batch_first=True, padding_value=pad_val
+        )
+        pad_proc_pid_seqs = pad_sequence(
+            pad_proc_pid_seqs, batch_first=True, padding_value=pad_val
+        )
+        pad_proc_negative_r_seqs = pad_sequence(
+            pad_proc_negative_r_seqs, batch_first=True, padding_value=pad_val
+        )
+
+        mask_seqs = (pad_proc_q_seqs != pad_val)
+
+        pad_proc_q_seqs, pad_proc_r_seqs, \
+            pad_proc_pid_seqs, pad_proc_negative_r_seqs = \
+            pad_proc_q_seqs * mask_seqs, pad_proc_r_seqs * mask_seqs, \
+                pad_proc_pid_seqs * mask_seqs, pad_proc_negative_r_seqs * mask_seqs
+
+        return pad_proc_q_seqs, pad_proc_r_seqs, pad_proc_pid_seqs, pad_proc_negative_r_seqs, mask_seqs
