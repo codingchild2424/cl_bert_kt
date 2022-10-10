@@ -5,7 +5,7 @@ def define_argparser():
     p = argparse.ArgumentParser()
 
     # model_file_name
-    p.add_argument('--model_fn', default="cl_monacobert")
+    p.add_argument('--model_fn', required=True)
 
     # basic arguments
     p.add_argument('--gpu_id', type=int, default=0 if torch.cuda.is_available() else -1)
@@ -19,11 +19,8 @@ def define_argparser():
     # model, opt, dataset, crit arguments
     p.add_argument('--model_name', type=str, default='cl_monacobert')
     p.add_argument('--optimizer', type=str, default='adam')
-    p.add_argument('--dataset_name', type=str, default = 'assist09')
+    p.add_argument('--dataset_name', type=str, default = 'assist2009_pid')
     p.add_argument('--crit', type=str, default = 'binary_cross_entropy')
-
-    # details
-    p.add_argument('--seed', type=int, default=12405)
 
     # bidkt's arguments
     p.add_argument('--max_seq_len', type=int, default=100)
