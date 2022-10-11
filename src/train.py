@@ -36,7 +36,7 @@ def main(config, train_loader=None, valid_loader=None, test_loader=None, num_q=N
     crit = get_crits(config)
     
     # 5. select trainers for models, using get_trainers
-    trainer = get_trainers(model, optimizer, device, num_q, crit, config)
+    trainer = get_trainers(model, optimizer, device, num_q, num_pid, crit, config)
 
     # 6. use trainer.train to train the models
     # the result contain train_scores, valid_scores, hightest_valid_score, highest_test_score

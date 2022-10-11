@@ -45,7 +45,7 @@ def define_argparser():
     p.add_argument('--use_augment', type=bool, default=False)
     p.add_argument('--seed', type=float, default=12405)
     # augmentation mask
-    p.add_argument('--concept_mask_prob', type=float, default=0.2)
+    p.add_argument('--mask_prob', type=float, default=0.2)
     p.add_argument('--crop_prob', type=float, default=0.3)
     p.add_argument('--permute_prob', type=float, default=0.3)
     p.add_argument('--replace_prob', type=float, default=0.3)
