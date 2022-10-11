@@ -520,6 +520,8 @@ class CL_MonaCoBERT(nn.Module):
         aug_q_j=None,
         aug_pid_i=None,
         aug_pid_j=None,
+        aug_r_i=None,
+        aug_r_j=None,
         mask_i=None,
         mask_j=None
         ):
@@ -543,8 +545,8 @@ class CL_MonaCoBERT(nn.Module):
 
         if self.training:
             
-            compare_emb = self.emb_c_q(aug_q_i) + self.emb_c_r(r) + self.emb_c_pid(aug_pid_i) + self._positional_embedding(q)
-            positive_emb = self.emb_p_q(aug_q_j) + self.emb_p_r(r) + self.emb_p_pid(aug_pid_j) + self._positional_embedding(q)
+            compare_emb = self.emb_c_q(aug_q_i) + self.emb_c_r(aug_r_i) + self.emb_c_pid(aug_pid_i) + self._positional_embedding(q)
+            positive_emb = self.emb_p_q(aug_q_j) + self.emb_p_r(aug_r_j) + self.emb_p_pid(aug_pid_j) + self._positional_embedding(q)
             negative_emb = self.emb_n_q(q) + self.emb_n_r(negative_r_seq) + self.emb_n_pid(pid) + self._positional_embedding(q)
             # |emb| = |negative_emb| = (bs, n, emb_size)
 

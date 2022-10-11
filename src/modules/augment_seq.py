@@ -6,6 +6,7 @@ from random import random, randint
 def augment_seq_func(
     q_seqs,
     pid_seqs,
+    r_seqs,
     mask_seqs,
     num_q,
     num_pid,
@@ -69,12 +70,19 @@ def augment_seq_func(
 
         masked_pid_seqs = torch.stack(masked_pid_seqs)
 
+        masked_r_seqs = r_seqs[:]
+
     else:
         masked_q_seqs = q_seqs[:]
         masked_pid_seqs = pid_seqs[:]
+        masked_r_seqs = r_seqs[:]
+
+    # crop
+    if config.crop_prob > 0:
+        pass
 
 
-    return masked_q_seqs, masked_pid_seqs
+    return masked_q_seqs, masked_pid_seqs, masked_r_seqs
 
         
 
