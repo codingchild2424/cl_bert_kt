@@ -61,6 +61,8 @@ class CL_MonaCoBERT_Trainer():
             r_seqs = batch["responses"].to(self.device)
             pid_seqs = batch["questions"].to(self.device)
             negative_r_seqs = batch["negative_responses"].to(self.device)
+            # diff
+            diff_seqs = batch["difficult"].to(self.device)
             mask_seqs = batch["masks"].to(self.device)
 
             # for correct
@@ -82,14 +84,14 @@ class CL_MonaCoBERT_Trainer():
 
             if self.config.use_augment:
                 # 여기에서 augment_seq를 활용해서 각 요소를 도출해야 함
-                aug_q_i, aug_pid_i, aug_r_i, aug_mask_i = augment_seq_func(
-                    q_seqs, pid_seqs, r_seqs, mask_seqs, self.num_q, self.num_pid, self.config, self.device
+                aug_q_i, aug_pid_i, aug_r_i, aug_diff_i, aug_mask_i = augment_seq_func(
+                    q_seqs, pid_seqs, r_seqs, diff_seqs, mask_seqs, self.num_q, self.num_pid, self.config, self.device
                     )
-                aug_q_j, aug_pid_j, aug_r_j, aug_mask_i = augment_seq_func(
-                    q_seqs, pid_seqs, r_seqs, mask_seqs, self.num_q, self.num_pid, self.config, self.device
+                aug_q_j, aug_pid_j, aug_r_j, aug_diff_j, aug_mask_j = augment_seq_func(
+                    q_seqs, pid_seqs, r_seqs, diff_seqs, mask_seqs, self.num_q, self.num_pid, self.config, self.device
                     )
                 mask_i = aug_mask_i
-                mask_j = aug_mask_i
+                mask_j = aug_mask_j
 
                 aug_q_i = aug_q_i.to(self.device)
                 aug_pid_i = aug_pid_i.to(self.device)
@@ -97,6 +99,10 @@ class CL_MonaCoBERT_Trainer():
                 aug_pid_j = aug_pid_j.to(self.device)
                 aug_r_i = aug_r_i.to(self.device)
                 aug_r_j = aug_r_j.to(self.device)
+
+                aug_diff_i = aug_diff_i.to(self.device)
+                aug_diff_j = aug_diff_j.to(self.device)
+
                 mask_i = mask_i.to(self.device)
                 mask_j = mask_j.to(self.device)
                 
@@ -108,6 +114,10 @@ class CL_MonaCoBERT_Trainer():
                 aug_pid_j = pid_seqs
                 aug_r_i = r_seqs
                 aug_r_j = r_seqs
+
+                aug_diff_i = diff_seqs.to(self.device)
+                aug_diff_j = diff_seqs.to(self.device)
+
                 mask_i = mask_seqs
                 mask_j = mask_seqs
 
@@ -115,6 +125,7 @@ class CL_MonaCoBERT_Trainer():
                 q_seqs.long(), 
                 mlm_r_seqs.long(), # r_seqs with MLM
                 pid_seqs.long(),
+                diff_seqs.long(),
                 negative_r_seqs.long(),
                 mask_seqs.long(), # for attn_mask
                 aug_q_i,
@@ -123,6 +134,8 @@ class CL_MonaCoBERT_Trainer():
                 aug_pid_j,
                 aug_r_i,
                 aug_r_j,
+                aug_diff_i,
+                aug_diff_j,
                 mask_i,
                 mask_j
             )
@@ -190,6 +203,8 @@ class CL_MonaCoBERT_Trainer():
                 r_seqs = batch["responses"].to(self.device)
                 pid_seqs = batch["questions"].to(self.device)
                 negative_r_seqs = batch["negative_responses"].to(self.device)
+                # diff
+                diff_seqs = batch["difficult"].to(self.device)
                 mask_seqs = batch["masks"].to(self.device)
 
                 real_seqs = r_seqs.clone()
@@ -203,6 +218,7 @@ class CL_MonaCoBERT_Trainer():
                     q_seqs.long(),
                     mlm_r_seqs.long(),
                     pid_seqs.long(),
+                    diff_seqs.long(),
                     negative_r_seqs.long(),
                     mask_seqs.long()
                 ).to(self.device)
@@ -243,6 +259,8 @@ class CL_MonaCoBERT_Trainer():
                 r_seqs = batch["responses"].to(self.device)
                 pid_seqs = batch["questions"].to(self.device)
                 negative_r_seqs = batch["negative_responses"].to(self.device)
+                # diff
+                diff_seqs = batch["difficult"].to(self.device)
                 mask_seqs = batch["masks"].to(self.device)
 
                 real_seqs = r_seqs.clone()
@@ -256,6 +274,7 @@ class CL_MonaCoBERT_Trainer():
                     q_seqs.long(),
                     mlm_r_seqs.long(),
                     pid_seqs.long(),
+                    diff_seqs.long(),
                     negative_r_seqs.long(),
                     mask_seqs.long()
                 ).to(self.device)

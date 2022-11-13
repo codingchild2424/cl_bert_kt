@@ -3,6 +3,7 @@ from torch.utils.data import DataLoader, random_split, Subset, ConcatDataset
 
 from dataloaders.pid_loader import PID_LOADER
 from dataloaders.sim_loader import SIM_LOADER
+from dataloaders.sim_diff_loader import SIM_DIFF_LOADER
 
 def get_loaders(config, idx=None):
 
@@ -27,13 +28,14 @@ def get_loaders(config, idx=None):
     
     # pid_loader or sim_loader
     if config.use_augment:
-        dataset = SIM_LOADER(config.max_seq_len, dataset_dir, config)
+        dataset = SIM_DIFF_LOADER(config.max_seq_len, dataset_dir, config, idx)
     else:
         dataset = PID_LOADER(config.max_seq_len, dataset_dir)
 
     num_q = dataset.num_q
     num_r = dataset.num_r
     num_pid = dataset.num_pid
+    num_diff = dataset.num_diff
     #collate = dataset.collate_fn
 
     # 2. data chunk
@@ -132,4 +134,4 @@ def get_loaders(config, idx=None):
         #collate_fn = collate
     )
 
-    return train_loader, valid_loader, test_loader, num_q, num_r, num_pid
+    return train_loader, valid_loader, test_loader, num_q, num_r, num_pid, num_diff

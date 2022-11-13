@@ -378,6 +378,7 @@ class CL_MonaCoBERT(nn.Module):
         num_q,
         num_r,
         num_pid,
+        num_diff,
         hidden_size,
         output_size,
         num_head,
@@ -393,6 +394,7 @@ class CL_MonaCoBERT(nn.Module):
         self.num_q = num_q + 3
         self.num_r = num_r + 2 # '+2' is for 1(correct), 0(incorrect), <PAD>, <MASK>
         self.num_pid = num_pid + 3
+        self.num_diff = num_diff + 3
         self.num_n_r = num_r + 1 # '+1' is 1(correct), 0(incorrect), <PAD>
 
         self.hidden_size = hidden_size
@@ -415,6 +417,8 @@ class CL_MonaCoBERT(nn.Module):
         self.emb_r = nn.Embedding(self.num_r, self.hidden_size).to(self.device)
         # problem embedding
         self.emb_pid = nn.Embedding(self.num_pid, self.hidden_size).to(self.device)
+        # diff embedding
+        self.emb_diff = nn.Embedding(self.num_diff, self.hidden_size).to(self.device)
         # positional embedding
         self.emb_p = nn.Embedding(self.max_seq_len, self.hidden_size).to(self.device)
 
@@ -425,6 +429,8 @@ class CL_MonaCoBERT(nn.Module):
         self.emb_c_r = nn.Embedding(self.num_r, self.hidden_size).to(self.device)
         # problem embedding
         self.emb_c_pid = nn.Embedding(self.num_pid, self.hidden_size).to(self.device)
+        # diff embedding
+        self.emb_c_diff = nn.Embedding(self.num_diff, self.hidden_size).to(self.device)
         # positional embedding
         self.emb_c_p = nn.Embedding(self.max_seq_len, self.hidden_size).to(self.device)
 
@@ -435,6 +441,8 @@ class CL_MonaCoBERT(nn.Module):
         self.emb_p_r = nn.Embedding(self.num_r, self.hidden_size).to(self.device)
         # problem embedding
         self.emb_p_pid = nn.Embedding(self.num_pid, self.hidden_size).to(self.device)
+        # diff embedding
+        self.emb_p_diff = nn.Embedding(self.num_diff, self.hidden_size).to(self.device)
         # positional embedding
         self.emb_p_p = nn.Embedding(self.max_seq_len, self.hidden_size).to(self.device)
 
@@ -445,6 +453,8 @@ class CL_MonaCoBERT(nn.Module):
         self.emb_n_r = nn.Embedding(self.num_n_r, self.hidden_size).to(self.device)
         # problem embedding
         self.emb_n_pid = nn.Embedding(self.num_pid, self.hidden_size).to(self.device)
+        # diff embedding
+        self.emb_n_diff = nn.Embedding(self.num_diff, self.hidden_size).to(self.device)
         # positional embedding
         self.emb_n_p = nn.Embedding(self.max_seq_len, self.hidden_size).to(self.device)
 
@@ -519,7 +529,8 @@ class CL_MonaCoBERT(nn.Module):
         self, 
         q, 
         r, 
-        pid, 
+        pid,
+        diff,
         negative_r_seq, 
         mask,
         aug_q_i=None,
@@ -528,6 +539,8 @@ class CL_MonaCoBERT(nn.Module):
         aug_pid_j=None,
         aug_r_i=None,
         aug_r_j=None,
+        aug_diff_i=None,
+        aug_diff_j=None,
         mask_i=None,
         mask_j=None
         ):
@@ -535,7 +548,7 @@ class CL_MonaCoBERT(nn.Module):
         # |r| = (bs, n)
         # |mask| = (bs, n)       
 
-        emb = self.emb_q(q) + self.emb_r(r) + self.emb_pid(pid) + self._positional_embedding(q)
+        emb = self.emb_q(q) + self.emb_r(r) + self.emb_pid(pid) + self.emb_diff(diff) + self._positional_embedding(q)
         # original monacobert
         z = self.emb_dropout(emb)
         # |z| = (bs, n, emb_size)
@@ -551,9 +564,9 @@ class CL_MonaCoBERT(nn.Module):
 
         if self.training:
             
-            compare_emb = self.emb_c_q(aug_q_i) + self.emb_c_r(aug_r_i) + self.emb_c_pid(aug_pid_i) + self._positional_embedding(q)
-            positive_emb = self.emb_p_q(aug_q_j) + self.emb_p_r(aug_r_j) + self.emb_p_pid(aug_pid_j) + self._positional_embedding(q)
-            negative_emb = self.emb_n_q(q) + self.emb_n_r(negative_r_seq) + self.emb_n_pid(pid) + self._positional_embedding(q)
+            compare_emb = self.emb_c_q(aug_q_i) + self.emb_c_r(aug_r_i) + self.emb_c_pid(aug_pid_i) + self.emb_c_diff(aug_diff_i) + self._positional_embedding(q)
+            positive_emb = self.emb_p_q(aug_q_j) + self.emb_p_r(aug_r_j) + self.emb_p_pid(aug_pid_j) + self.emb_p_diff(aug_diff_j) + self._positional_embedding(q)
+            negative_emb = self.emb_n_q(q) + self.emb_n_r(negative_r_seq) + self.emb_n_pid(pid) + self.emb_n_diff(diff) + self._positional_embedding(q)
             # |emb| = |negative_emb| = (bs, n, emb_size)
 
             ###############
@@ -561,40 +574,41 @@ class CL_MonaCoBERT(nn.Module):
             ###############
             if self.config.use_augment:
 
-                ###############
-                # span cutoff #
-                ###############
+                #################
+                # cutoff module #
+                #################
+
+                # default is span cutoff
                 
+                # span cutoff
+                if self.config.use_span_cutoff:
+                    cutoff_num = int(self.max_seq_len * self.config.cutoff_prob)
 
-                cutoff_num = int(self.max_seq_len * self.config.cutoff_prob)
+                    # 인덱스만큼 전체 길이를 제한
+                    cutoff_range = range(self.max_seq_len - cutoff_num)
+                    
+                    compare_cutoff_pos = random.sample(cutoff_range, 1)
+                    compare_emb[:, :, compare_cutoff_pos[0] : compare_cutoff_pos[0]+cutoff_num] = 0
 
-                # 인덱스만큼 전체 길이를 제한
-                cutoff_range = range(self.max_seq_len - cutoff_num)
-                
-                compare_cutoff_pos = random.sample(cutoff_range, 1)
-                compare_emb[:, :, compare_cutoff_pos[0] : compare_cutoff_pos[0]+cutoff_num] = 0
+                    positive_cutoff_pos = random.sample(cutoff_range, 1)
+                    positive_emb[:, :, positive_cutoff_pos[0] : positive_cutoff_pos[0]+cutoff_num] = 0
 
-                positive_cutoff_pos = random.sample(cutoff_range, 1)
-                positive_emb[:, :, positive_cutoff_pos[0] : positive_cutoff_pos[0]+cutoff_num] = 0
+                    negative_cutoff_pos = random.sample(cutoff_range, 1)
+                    negative_emb[:, :, negative_cutoff_pos[0] : negative_cutoff_pos[0]+cutoff_num] = 0
+                # cutoff
+                else:
+                    cutoff_range = range(self.max_seq_len)
 
-                negative_cutoff_pos = random.sample(cutoff_range, 1)
-                negative_emb[:, :, negative_cutoff_pos[0] : negative_cutoff_pos[0]+cutoff_num] = 0
+                    cutoff_num = int(self.max_seq_len * self.config.cutoff_prob)
+                    
+                    compare_cutoff_pos = random.sample(cutoff_range, cutoff_num)
+                    compare_emb[:, :, compare_cutoff_pos] = 0
 
-                #########
-                # cutoff_range = range(self.max_seq_len)
+                    positive_cutoff_pos = random.sample(cutoff_range, cutoff_num)
+                    positive_emb[:, :, positive_cutoff_pos] = 0
 
-                # cutoff_num = int(self.max_seq_len * self.config.cutoff_prob)
-                
-                # compare_cutoff_pos = random.sample(cutoff_range, cutoff_num)
-                # #compare_cutoff_pos = random.randint(0, self.max_seq_len)
-                # compare_emb[:, :, compare_cutoff_pos] = 0
-
-                # positive_cutoff_pos = random.sample(cutoff_range, cutoff_num)
-                # positive_emb[:, :, positive_cutoff_pos] = 0
-
-                # negative_cutoff_pos = random.sample(cutoff_range, cutoff_num)
-                # negative_emb[:, :, negative_cutoff_pos] = 0
-                ##########
+                    negative_cutoff_pos = random.sample(cutoff_range, cutoff_num)
+                    negative_emb[:, :, negative_cutoff_pos] = 0
 
             ## compare ##
             c_z = self.emb_dropout(compare_emb)

@@ -7,6 +7,7 @@ def augment_seq_func(
     q_seqs,
     pid_seqs,
     r_seqs,
+    diff_seqs,
     mask_seqs,
     num_q,
     num_pid,
@@ -22,6 +23,7 @@ def augment_seq_func(
     masked_q_seqs = q_seqs
     masked_pid_seqs = pid_seqs
     masked_r_seqs = r_seqs
+    masked_diff_seqs = diff_seqs
     augment_mask_seqs = mask_seqs
 
     if config.mask_prob > 0:
@@ -29,7 +31,7 @@ def augment_seq_func(
             q_seqs, pid_seqs, r_seqs, mask_seqs, num_q, num_pid, device, config
             )
 
-    return masked_q_seqs, masked_pid_seqs, masked_r_seqs, augment_mask_seqs
+    return masked_q_seqs, masked_pid_seqs, masked_r_seqs, masked_diff_seqs, augment_mask_seqs
 
 
 def concept_question_mask_func(q_seqs, pid_seqs, r_seqs, mask_seqs, num_q, num_pid, device, config):
