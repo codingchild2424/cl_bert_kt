@@ -4,6 +4,8 @@ import numpy as np
 import math
 import torch.nn.functional as F
 
+import random
+
 # SeparableConv1D
 class SeparableConv1D(nn.Module):
     def __init__(self, input_filters, output_filters, kernel_size):
@@ -340,6 +342,7 @@ class EncoderBlock(nn.Module):
 
         return z, mask
 
+
     # Thanks for the upstage
     # upstage's gelu
     def gelu(x):
@@ -382,6 +385,7 @@ class CL_MonaCoBERT(nn.Module):
         max_seq_len,
         device,
         use_leakyrelu,
+        config,
         dropout_p=.1,
     ):
         super().__init__()
@@ -446,6 +450,8 @@ class CL_MonaCoBERT(nn.Module):
 
 
         self.emb_dropout = nn.Dropout(self.dropout_p)
+
+        self.config = config
 
         # Original MonaCoBERT
         self.encoder = MySequential(
@@ -549,6 +555,46 @@ class CL_MonaCoBERT(nn.Module):
             positive_emb = self.emb_p_q(aug_q_j) + self.emb_p_r(aug_r_j) + self.emb_p_pid(aug_pid_j) + self._positional_embedding(q)
             negative_emb = self.emb_n_q(q) + self.emb_n_r(negative_r_seq) + self.emb_n_pid(pid) + self._positional_embedding(q)
             # |emb| = |negative_emb| = (bs, n, emb_size)
+
+            ###############
+            # cutoff module #
+            ###############
+            if self.config.use_augment:
+
+                ###############
+                # span cutoff #
+                ###############
+                
+
+                cutoff_num = int(self.max_seq_len * self.config.cutoff_prob)
+
+                # 인덱스만큼 전체 길이를 제한
+                cutoff_range = range(self.max_seq_len - cutoff_num)
+                
+                compare_cutoff_pos = random.sample(cutoff_range, 1)
+                compare_emb[:, :, compare_cutoff_pos[0] : compare_cutoff_pos[0]+cutoff_num] = 0
+
+                positive_cutoff_pos = random.sample(cutoff_range, 1)
+                positive_emb[:, :, positive_cutoff_pos[0] : positive_cutoff_pos[0]+cutoff_num] = 0
+
+                negative_cutoff_pos = random.sample(cutoff_range, 1)
+                negative_emb[:, :, negative_cutoff_pos[0] : negative_cutoff_pos[0]+cutoff_num] = 0
+
+                #########
+                # cutoff_range = range(self.max_seq_len)
+
+                # cutoff_num = int(self.max_seq_len * self.config.cutoff_prob)
+                
+                # compare_cutoff_pos = random.sample(cutoff_range, cutoff_num)
+                # #compare_cutoff_pos = random.randint(0, self.max_seq_len)
+                # compare_emb[:, :, compare_cutoff_pos] = 0
+
+                # positive_cutoff_pos = random.sample(cutoff_range, cutoff_num)
+                # positive_emb[:, :, positive_cutoff_pos] = 0
+
+                # negative_cutoff_pos = random.sample(cutoff_range, cutoff_num)
+                # negative_emb[:, :, negative_cutoff_pos] = 0
+                ##########
 
             ## compare ##
             c_z = self.emb_dropout(compare_emb)

@@ -49,6 +49,8 @@ def define_argparser():
     p.add_argument('--crop_prob', type=float, default=0.3)
     p.add_argument('--permute_prob', type=float, default=0.3)
     p.add_argument('--replace_prob', type=float, default=0.3)
+    # cutoff
+    p.add_argument('--cutoff_prob', type=float, default=0.01)
 
     
 

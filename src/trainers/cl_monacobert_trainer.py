@@ -82,14 +82,14 @@ class CL_MonaCoBERT_Trainer():
 
             if self.config.use_augment:
                 # 여기에서 augment_seq를 활용해서 각 요소를 도출해야 함
-                aug_q_i, aug_pid_i, aug_r_i = augment_seq_func(
-                    q_seqs, pid_seqs, r_seqs, mask_seqs, self.num_q, self.num_pid, self.config
+                aug_q_i, aug_pid_i, aug_r_i, aug_mask_i = augment_seq_func(
+                    q_seqs, pid_seqs, r_seqs, mask_seqs, self.num_q, self.num_pid, self.config, self.device
                     )
-                aug_q_j, aug_pid_j, aug_r_j = augment_seq_func(
-                    q_seqs, pid_seqs, r_seqs, mask_seqs, self.num_q, self.num_pid, self.config
+                aug_q_j, aug_pid_j, aug_r_j, aug_mask_i = augment_seq_func(
+                    q_seqs, pid_seqs, r_seqs, mask_seqs, self.num_q, self.num_pid, self.config, self.device
                     )
-                mask_i = mask_seqs
-                mask_j = mask_seqs
+                mask_i = aug_mask_i
+                mask_j = aug_mask_i
 
                 aug_q_i = aug_q_i.to(self.device)
                 aug_pid_i = aug_pid_i.to(self.device)
@@ -97,6 +97,8 @@ class CL_MonaCoBERT_Trainer():
                 aug_pid_j = aug_pid_j.to(self.device)
                 aug_r_i = aug_r_i.to(self.device)
                 aug_r_j = aug_r_j.to(self.device)
+                mask_i = mask_i.to(self.device)
+                mask_j = mask_j.to(self.device)
                 
             else:
                 # augmentation을 쓰지 않는 경우
