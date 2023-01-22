@@ -2,7 +2,7 @@
 
 python \
 train.py \
---model_fn con_pro_mask_${j}.pth \
+--model_fn test.pth \
 --model_name cl_monacobert \
 --dataset_name assist09 \
 --num_encoder 4 \
@@ -15,7 +15,8 @@ train.py \
 --cl_lambda 0.1 \
 --use_augment True \
 --mask_prob 0 \
---crop_prob 0.1 \
+--crop_prob 0 \
+--summarize_prob 0.3 \
 --permute_prob 0 \
 --replace_prob 0 \
 --use_cutoff False
