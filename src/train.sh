@@ -16,7 +16,9 @@ train.py \
 --use_augment True \
 --mask_prob 0 \
 --crop_prob 0 \
---summarize_prob 0.3 \
+--summarize_prob 0 \
+--reverse_prob 0 \
 --permute_prob 0 \
+--segment_permute_prob 0.3 \
 --replace_prob 0 \
 --use_cutoff False

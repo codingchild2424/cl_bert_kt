@@ -27,40 +27,71 @@ def augment_seq_func(
     - concept과 question에 대한 mask
     '''
     if 1 > config.mask_prob > 0:
-        masked_q_seqs, masked_pid_seqs, masked_r_seqs, augment_mask_seqs = concept_question_mask_func(
-            q_seqs, pid_seqs, r_seqs, mask_seqs, num_q, num_pid, device, config
-            )
+        if random() < config.mask_prob:
+            masked_q_seqs, masked_pid_seqs, masked_r_seqs, augment_mask_seqs = concept_question_mask_func(
+                q_seqs, pid_seqs, r_seqs, mask_seqs, num_q, num_pid, device, config
+                )
+        else:
+            pass
     
     '''
     Crop Fuction
     - 일정 부분만큼 잘라내기
     '''
     if 1 > config.crop_prob > 0:
-        masked_q_seqs, masked_pid_seqs, masked_r_seqs, augment_mask_seqs = crop_func(
-            q_seqs, pid_seqs, r_seqs, mask_seqs, num_q, num_pid, device, config
-            )
+        if random() < config.crop_prob:
+            masked_q_seqs, masked_pid_seqs, masked_r_seqs, augment_mask_seqs = crop_func(
+                q_seqs, pid_seqs, r_seqs, mask_seqs, num_q, num_pid, device, config
+                )
+        else:
+            pass
 
     '''
     Summarization
     - 랜덤으로 일정 부분만 시퀀스를 유지한채로 추출하기
     '''
     if 1 > config.summarize_prob > 0:
-        masked_q_seqs, masked_pid_seqs, masked_r_seqs, augment_mask_seqs = summarize_func(
-            q_seqs, pid_seqs, r_seqs, mask_seqs, num_q, num_pid, device, config
-            )
+        if random() < config.summarize_prob:
+            masked_q_seqs, masked_pid_seqs, masked_r_seqs, augment_mask_seqs = summarize_func(
+                q_seqs, pid_seqs, r_seqs, mask_seqs, num_q, num_pid, device, config
+                )
+        else:
+            pass
+
+    '''
+    Reverse
+    - 시퀀스 순서 반대로 섞기
+    '''
+    if 1 > config.reverse_prob > 0:
+        if random() < config.reverse_prob:
+            masked_q_seqs, masked_pid_seqs, masked_r_seqs, augment_mask_seqs = reverse_func(
+                q_seqs, pid_seqs, r_seqs, mask_seqs, num_q, num_pid, device, config
+                )
+        else:
+            pass
+
 
     '''
     Permute Function
     '''
     if 1 > config.permute_prob > 0:
-        masked_q_seqs, masked_pid_seqs, masked_r_seqs, augment_mask_seqs = permute_func(
-            q_seqs, pid_seqs, r_seqs, mask_seqs, num_q, num_pid, device, config
-            )
+        if random() < config.permute_prob:
+            masked_q_seqs, masked_pid_seqs, masked_r_seqs, augment_mask_seqs = permute_func(
+                q_seqs, pid_seqs, r_seqs, mask_seqs, num_q, num_pid, device, config
+                )
+        else:
+            pass
 
     '''
-    
+    Segment Permute Function    
     '''
-    
+    if 1 > config.segment_permute_prob > 0:
+        if random() < config.segment_permute_prob:
+            masked_q_seqs, masked_pid_seqs, masked_r_seqs, augment_mask_seqs = segment_permute_func(
+                q_seqs, pid_seqs, r_seqs, mask_seqs, num_q, num_pid, device, config
+                )
+        else:
+            pass
 
 
     return masked_q_seqs, masked_pid_seqs, masked_r_seqs, masked_q_diff_seqs, masked_pid_diff_seqs, augment_mask_seqs
@@ -241,5 +272,162 @@ def summarize_func(q_seqs, pid_seqs, r_seqs, mask_seqs, num_q, num_pid, device, 
     return masked_q_seqs, masked_pid_seqs, masked_r_seqs, augment_mask_seqs
 
 
+def reverse_func(q_seqs, pid_seqs, r_seqs, mask_seqs, num_q, num_pid, device, config):
+    reverse_masked_q_seqs = []
+    reverse_masked_pid_seqs = []
+    reverse_masked_r_seqs = []
+    reverse_mask_seqs = []
+
+    for q_seq, pid_seq, r_seq, mask_seq in zip(q_seqs, pid_seqs, r_seqs, mask_seqs):
+        q_len = q_seq.size(0)
+        real_q_seq = torch.masked_select(q_seq.to(device), mask_seq.to(device)).cpu()
+        real_pid_seq = torch.masked_select(pid_seq.to(device), mask_seq.to(device)).cpu()
+        real_r_seq = torch.masked_select(r_seq.to(device), mask_seq.to(device)).cpu()
+        
+        real_q_seq_len = real_q_seq.size(0)
+
+        reverse_q_seq = torch.flip(real_q_seq, dims=(-1,)).to(device)
+        reverse_pid_seq = torch.flip(real_pid_seq, dims=(-1,)).to(device)
+        reverse_r_seq = torch.flip(real_r_seq, dims=(-1,)).to(device)
+
+        pad_len = q_len - real_q_seq_len
+
+        pad_seq = torch.full((1, pad_len), 0).squeeze(0).to(device)
+
+        pad_q_seq = torch.cat((reverse_q_seq, pad_seq), dim=-1)
+        pad_pid_seq = torch.cat((reverse_pid_seq, pad_seq), dim=-1)
+        pad_r_seq = torch.cat((reverse_r_seq, pad_seq), dim=-1)
+        reverse_mask_seq = torch.cat((
+            torch.ones(real_q_seq_len).to(device), 
+            pad_seq), dim=-1)
+        reverse_mask_seq = torch.tensor(reverse_mask_seq, dtype=torch.bool)
+
+        reverse_masked_q_seqs.append(pad_q_seq.to(device))
+        reverse_masked_pid_seqs.append(pad_pid_seq.to(device))
+        reverse_masked_r_seqs.append(pad_r_seq.to(device))
+        reverse_mask_seqs.append(reverse_mask_seq.to(device))
+
+    masked_q_seqs = torch.stack(reverse_masked_q_seqs).to(device)
+    masked_pid_seqs = torch.stack(reverse_masked_pid_seqs).to(device)
+    masked_r_seqs = torch.stack(reverse_masked_r_seqs).to(device)
+    augment_mask_seqs = torch.stack(reverse_mask_seqs).to(device)
+
+    return masked_q_seqs, masked_pid_seqs, masked_r_seqs, augment_mask_seqs
+
+
 def permute_func(q_seqs, pid_seqs, r_seqs, mask_seqs, num_q, num_pid, device, config):
-    pass
+
+    permute_masked_q_seqs = []
+    permute_masked_pid_seqs = []
+    permute_masked_r_seqs = []
+    permute_mask_seqs = []
+
+    for q_seq, pid_seq, r_seq, mask_seq in zip(q_seqs, pid_seqs, r_seqs, mask_seqs):
+        q_len = q_seq.size(0)
+
+        real_q_seq = torch.masked_select(q_seq.to(device), mask_seq.to(device)).cpu()
+        real_pid_seq = torch.masked_select(pid_seq.to(device), mask_seq.to(device)).cpu()
+        real_r_seq = torch.masked_select(r_seq.to(device), mask_seq.to(device)).cpu()
+
+        real_q_seq_len = real_q_seq.size(0)
+
+        indices = torch.randperm(real_q_seq_len)
+
+        permute_q_seq = real_q_seq[indices].to(device)
+        permute_pid_seq = real_pid_seq[indices].to(device)
+        permute_r_seq = real_r_seq[indices].to(device)
+
+        pad_len = q_len - real_q_seq_len
+
+        pad_seq = torch.full((1, pad_len), 0).squeeze(0).to(device)
+
+        pad_q_seq = torch.cat((permute_q_seq, pad_seq), dim=-1)
+        pad_pid_seq = torch.cat((permute_pid_seq, pad_seq), dim=-1)
+        pad_r_seq = torch.cat((permute_r_seq, pad_seq), dim=-1)
+
+        permute_mask_seq = torch.cat((
+            torch.ones(real_q_seq_len).to(device),
+            pad_seq), dim=-1)
+        permute_mask_seq = torch.tensor(permute_mask_seq, dtype=torch.bool)
+
+        permute_masked_q_seqs.append(pad_q_seq.to(device))
+        permute_masked_pid_seqs.append(pad_pid_seq.to(device))
+        permute_masked_r_seqs.append(pad_r_seq.to(device))
+        permute_mask_seqs.append(permute_mask_seq.to(device))
+
+    masked_q_seqs = torch.stack(permute_masked_q_seqs).to(device)
+    masked_pid_seqs = torch.stack(permute_masked_pid_seqs).to(device)
+    masked_r_seqs = torch.stack(permute_masked_r_seqs).to(device)
+    augment_mask_seqs = torch.stack(permute_mask_seqs).to(device)
+
+    return masked_q_seqs, masked_pid_seqs, masked_r_seqs, augment_mask_seqs
+
+
+def segment_permute_func(q_seqs, pid_seqs, r_seqs, mask_seqs, num_q, num_pid, device, config):
+    
+    segment_permute_masked_q_seqs = []
+    segment_permute_masked_pid_seqs = []
+    segment_permute_masked_r_seqs = []
+    segment_permute_mask_seqs = []
+
+    for q_seq, pid_seq, r_seq, mask_seq in zip(q_seqs, pid_seqs, r_seqs, mask_seqs):
+        q_len = q_seq.size(0)
+
+        real_q_seq = torch.masked_select(q_seq.to(device), mask_seq.to(device)).cpu()
+        real_pid_seq = torch.masked_select(pid_seq.to(device), mask_seq.to(device)).cpu()
+        real_r_seq = torch.masked_select(r_seq.to(device), mask_seq.to(device)).cpu()
+
+        real_q_seq_len = real_q_seq.size(0)
+
+        if real_q_seq_len <= 5:
+            segment_permute_masked_q_seqs.append(q_seq.to(device))
+            segment_permute_masked_pid_seqs.append(pid_seq.to(device))
+            segment_permute_masked_r_seqs.append(r_seq.to(device))
+            segment_permute_mask_seqs.append(mask_seq.to(device))
+        else:
+            # make two segment and permute and concat two segment
+
+            segment_len = int(real_q_seq_len / 2)
+            segment_num = int(real_q_seq_len / segment_len)
+
+            segment_permute_q_seq = torch.zeros(real_q_seq_len, dtype=torch.long).to(device)
+            segment_permute_pid_seq = torch.zeros(real_q_seq_len, dtype=torch.long).to(device)
+            segment_permute_r_seq = torch.zeros(real_q_seq_len, dtype=torch.long).to(device)
+
+            for i in range(segment_num):
+                # even segment
+                if i % 2 == 0:
+                    segment_permute_q_seq[i*segment_len:(i+1)*segment_len] = real_q_seq[ (i*segment_len) + segment_len : (i+1)*segment_len + segment_len]
+                    segment_permute_pid_seq[i*segment_len:(i+1)*segment_len] = real_pid_seq[ (i*segment_len) + segment_len : (i+1)*segment_len + segment_len]
+                    segment_permute_r_seq[i*segment_len:(i+1)*segment_len] = real_r_seq[ (i*segment_len) + segment_len : (i+1)*segment_len + segment_len]
+                # odd segment
+                else:
+                    segment_permute_q_seq[i*segment_len:(i+1)*segment_len] = real_q_seq[ (i*segment_len) - segment_len : (i+1)*segment_len - segment_len]
+                    segment_permute_pid_seq[i*segment_len:(i+1)*segment_len] = real_pid_seq[ (i*segment_len) - segment_len : (i+1)*segment_len - segment_len]
+                    segment_permute_r_seq[i*segment_len:(i+1)*segment_len] = real_r_seq[ (i*segment_len) - segment_len : (i+1)*segment_len - segment_len]
+
+            pad_len = q_len - real_q_seq_len
+
+            pad_seq = torch.full((1, pad_len), 0).squeeze(0).to(device)
+            pad_q_seq = torch.cat((segment_permute_q_seq, pad_seq), dim=-1)
+            pad_pid_seq = torch.cat((segment_permute_pid_seq, pad_seq), dim=-1)
+            pad_r_seq = torch.cat((segment_permute_r_seq, pad_seq), dim=-1)
+            segment_mask_seq = torch.cat((
+                torch.ones(real_q_seq_len).to(device),
+                pad_seq), dim=-1)
+            segment_mask_seq = torch.tensor(segment_mask_seq, dtype=torch.bool)
+
+            segment_permute_masked_q_seqs.append(pad_q_seq.to(device))
+            segment_permute_masked_pid_seqs.append(pad_pid_seq.to(device))
+            segment_permute_masked_r_seqs.append(pad_r_seq.to(device))
+            segment_permute_mask_seqs.append(segment_mask_seq.to(device))
+
+    masked_q_seqs = torch.stack(segment_permute_masked_q_seqs).to(device)
+    masked_pid_seqs = torch.stack(segment_permute_masked_pid_seqs).to(device)
+    masked_r_seqs = torch.stack(segment_permute_masked_r_seqs).to(device)
+    segment_permute_mask_seqs = torch.stack(segment_permute_mask_seqs).to(device)
+
+    return masked_q_seqs, masked_pid_seqs, masked_r_seqs, segment_permute_mask_seqs
+
+
+    # pass
