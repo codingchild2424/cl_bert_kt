@@ -35,7 +35,10 @@ def get_loaders(config, idx=None):
     num_q = dataset.num_q
     num_r = dataset.num_r
     num_pid = dataset.num_pid
-    num_diff = dataset.num_diff
+    num_q_diff = dataset.num_q_diff
+    num_pid_diff = dataset.num_q_diff
+    num_negative_q_diff = dataset.num_negative_q_diff
+    num_negative_pid_diff = dataset.num_negative_pid_diff
     #collate = dataset.collate_fn
 
     # 2. data chunk
@@ -134,4 +137,4 @@ def get_loaders(config, idx=None):
         #collate_fn = collate
     )
 
-    return train_loader, valid_loader, test_loader, num_q, num_r, num_pid, num_diff
+    return train_loader, valid_loader, test_loader, num_q, num_r, num_pid, num_q_diff, num_pid_diff, num_negative_q_diff, num_negative_pid_diff

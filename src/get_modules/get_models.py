@@ -1,14 +1,17 @@
 from models.cl_monacobert import CL_MonaCoBERT
 
 # get models
-def get_models(num_q, num_r, num_pid, num_diff, device, config):
+def get_models(num_q, num_r, num_pid, num_q_diff, num_pid_diff, num_negative_q_diff, num_negative_pid_diff, device, config):
     # choose the models
     if config.model_name == "cl_monacobert":
         model = CL_MonaCoBERT(
             num_q=num_q,
             num_r=num_r,
             num_pid=num_pid,
-            num_diff=num_diff,
+            num_q_diff=num_q_diff,
+            num_pid_diff=num_pid_diff,
+            num_negative_q_diff=num_negative_q_diff,
+            num_negative_pid_diff=num_negative_pid_diff,
             hidden_size=config.hidden_size,
             output_size=config.output_size,
             num_head=config.num_head,

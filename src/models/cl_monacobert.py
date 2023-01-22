@@ -378,7 +378,10 @@ class CL_MonaCoBERT(nn.Module):
         num_q,
         num_r,
         num_pid,
-        num_diff,
+        num_q_diff,
+        num_pid_diff,
+        num_negative_q_diff,
+        num_negative_pid_diff,
         hidden_size,
         output_size,
         num_head,
@@ -394,7 +397,10 @@ class CL_MonaCoBERT(nn.Module):
         self.num_q = num_q + 3
         self.num_r = num_r + 2 # '+2' is for 1(correct), 0(incorrect), <PAD>, <MASK>
         self.num_pid = num_pid + 3
-        self.num_diff = num_diff + 3
+        self.num_q_diff = num_q_diff + 3
+        self.num_pid_diff = num_pid_diff + 3
+        self.num_negative_q_diff = num_negative_q_diff + 3
+        self.num_negative_pid_diff = num_negative_pid_diff + 3
         self.num_n_r = num_r + 1 # '+1' is 1(correct), 0(incorrect), <PAD>
 
         self.hidden_size = hidden_size
@@ -410,7 +416,9 @@ class CL_MonaCoBERT(nn.Module):
         self.temp = 0.05 # 필요시 수정
         self.hard_negative_weight = 1
 
-        # For Original
+        ################
+        # For Original #
+        ################
         # question embedding
         self.emb_q = nn.Embedding(self.num_q, self.hidden_size).to(self.device)
         # response embedding
@@ -418,11 +426,16 @@ class CL_MonaCoBERT(nn.Module):
         # problem embedding
         self.emb_pid = nn.Embedding(self.num_pid, self.hidden_size).to(self.device)
         # diff embedding
-        self.emb_diff = nn.Embedding(self.num_diff, self.hidden_size).to(self.device)
+        self.emb_q_diff = nn.Embedding(self.num_q_diff, self.hidden_size).to(self.device)
+        self.emb_pid_diff = nn.Embedding(self.num_pid_diff, self.hidden_size).to(self.device)
+        self.emb_negative_q_diff = nn.Embedding(self.num_q_diff, self.hidden_size).to(self.device)
+        self.emb_negative_pid_diff = nn.Embedding(self.num_pid_diff, self.hidden_size).to(self.device)
         # positional embedding
         self.emb_p = nn.Embedding(self.max_seq_len, self.hidden_size).to(self.device)
 
-        # For Compare
+        ###############
+        # For Compare #
+        ###############
         # question embedding
         self.emb_c_q = nn.Embedding(self.num_q, self.hidden_size).to(self.device)
         # negative_response embedding
@@ -430,11 +443,16 @@ class CL_MonaCoBERT(nn.Module):
         # problem embedding
         self.emb_c_pid = nn.Embedding(self.num_pid, self.hidden_size).to(self.device)
         # diff embedding
-        self.emb_c_diff = nn.Embedding(self.num_diff, self.hidden_size).to(self.device)
+        self.emb_c_q_diff = nn.Embedding(self.num_q_diff, self.hidden_size).to(self.device)
+        self.emb_c_pid_diff = nn.Embedding(self.num_pid_diff, self.hidden_size).to(self.device)
+        self.emb_c_negative_q_diff = nn.Embedding(self.num_q_diff, self.hidden_size).to(self.device)
+        self.emb_c_negative_pid_diff = nn.Embedding(self.num_pid_diff, self.hidden_size).to(self.device)
         # positional embedding
         self.emb_c_p = nn.Embedding(self.max_seq_len, self.hidden_size).to(self.device)
 
-        # For Positive
+        ################
+        # For Positive #
+        ################
         # question embedding
         self.emb_p_q = nn.Embedding(self.num_q, self.hidden_size).to(self.device)
         # negative_response embedding
@@ -442,11 +460,16 @@ class CL_MonaCoBERT(nn.Module):
         # problem embedding
         self.emb_p_pid = nn.Embedding(self.num_pid, self.hidden_size).to(self.device)
         # diff embedding
-        self.emb_p_diff = nn.Embedding(self.num_diff, self.hidden_size).to(self.device)
+        self.emb_p_q_diff = nn.Embedding(self.num_q_diff, self.hidden_size).to(self.device)
+        self.emb_p_pid_diff = nn.Embedding(self.num_pid_diff, self.hidden_size).to(self.device)
+        self.emb_p_negative_q_diff = nn.Embedding(self.num_q_diff, self.hidden_size).to(self.device)
+        self.emb_p_negative_pid_diff = nn.Embedding(self.num_pid_diff, self.hidden_size).to(self.device)
         # positional embedding
         self.emb_p_p = nn.Embedding(self.max_seq_len, self.hidden_size).to(self.device)
 
-        # For Negative
+        ################
+        # For Negative #
+        ################
         # question embedding
         self.emb_n_q = nn.Embedding(self.num_q, self.hidden_size).to(self.device)
         # negative_response embedding
@@ -454,7 +477,10 @@ class CL_MonaCoBERT(nn.Module):
         # problem embedding
         self.emb_n_pid = nn.Embedding(self.num_pid, self.hidden_size).to(self.device)
         # diff embedding
-        self.emb_n_diff = nn.Embedding(self.num_diff, self.hidden_size).to(self.device)
+        self.emb_n_q_diff = nn.Embedding(self.num_q_diff, self.hidden_size).to(self.device)
+        self.emb_n_pid_diff = nn.Embedding(self.num_pid_diff, self.hidden_size).to(self.device)
+        self.emb_n_negative_q_diff = nn.Embedding(self.num_negative_q_diff, self.hidden_size).to(self.device)
+        self.emb_n_negative_pid_diff = nn.Embedding(self.num_negative_pid_diff, self.hidden_size).to(self.device)
         # positional embedding
         self.emb_n_p = nn.Embedding(self.max_seq_len, self.hidden_size).to(self.device)
 
@@ -530,8 +556,11 @@ class CL_MonaCoBERT(nn.Module):
         q, 
         r, 
         pid,
-        diff,
-        negative_r_seq, 
+        q_diff,
+        pid_diff,
+        negative_r, 
+        negative_q_diff,
+        negative_pid_diff,
         mask,
         aug_q_i=None,
         aug_q_j=None,
@@ -539,8 +568,10 @@ class CL_MonaCoBERT(nn.Module):
         aug_pid_j=None,
         aug_r_i=None,
         aug_r_j=None,
-        aug_diff_i=None,
-        aug_diff_j=None,
+        aug_q_diff_i=None,
+        aug_q_diff_j=None,
+        aug_pid_diff_i=None,
+        aug_pid_diff_j=None,
         mask_i=None,
         mask_j=None
         ):
@@ -548,7 +579,7 @@ class CL_MonaCoBERT(nn.Module):
         # |r| = (bs, n)
         # |mask| = (bs, n)       
 
-        emb = self.emb_q(q) + self.emb_r(r) + self.emb_pid(pid) + self.emb_diff(diff) + self._positional_embedding(q)
+        emb = self.emb_q(q) + self.emb_r(r) + self.emb_pid(pid) + self.emb_q_diff(q_diff) + self.emb_pid_diff(pid_diff) + self._positional_embedding(q)
         # original monacobert
         z = self.emb_dropout(emb)
         # |z| = (bs, n, emb_size)
@@ -564,21 +595,18 @@ class CL_MonaCoBERT(nn.Module):
 
         if self.training:
             
-            compare_emb = self.emb_c_q(aug_q_i) + self.emb_c_r(aug_r_i) + self.emb_c_pid(aug_pid_i) + self.emb_c_diff(aug_diff_i) + self._positional_embedding(q)
-            positive_emb = self.emb_p_q(aug_q_j) + self.emb_p_r(aug_r_j) + self.emb_p_pid(aug_pid_j) + self.emb_p_diff(aug_diff_j) + self._positional_embedding(q)
-            negative_emb = self.emb_n_q(q) + self.emb_n_r(negative_r_seq) + self.emb_n_pid(pid) + self.emb_n_diff(diff) + self._positional_embedding(q)
+            compare_emb = self.emb_c_q(aug_q_i) + self.emb_c_r(aug_r_i) + self.emb_c_pid(aug_pid_i) + \
+                 self.emb_c_q_diff(aug_q_diff_i) + self.emb_c_pid_diff(aug_pid_diff_i) + self._positional_embedding(q)
+            positive_emb = self.emb_p_q(aug_q_j) + self.emb_p_r(aug_r_j) + self.emb_p_pid(aug_pid_j) + \
+                self.emb_p_q_diff(aug_q_diff_j) + self.emb_p_pid_diff(aug_pid_diff_j) + self._positional_embedding(q)
+            negative_emb = self.emb_n_q(q) + self.emb_n_r(negative_r) + self.emb_n_pid(pid) + \
+                self.emb_n_q_diff(negative_q_diff) + self.emb_n_pid_diff(negative_pid_diff) + self._positional_embedding(q)
             # |emb| = |negative_emb| = (bs, n, emb_size)
 
-            ###############
+            #################
             # cutoff module #
-            ###############
-            if self.config.use_augment:
-
-                #################
-                # cutoff module #
-                #################
-
-                # default is span cutoff
+            #################
+            if self.config.use_cutoff:
                 
                 # span cutoff
                 if self.config.use_span_cutoff:

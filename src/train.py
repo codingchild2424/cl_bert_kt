@@ -9,7 +9,7 @@ from utils import get_optimizers, get_crits, recorder, visualizer
 
 from define_argparser import define_argparser
 
-def main(config, train_loader=None, valid_loader=None, test_loader=None, num_q=None, num_r=None, num_pid=None, num_diff=None):
+def main(config, train_loader=None, valid_loader=None, test_loader=None, num_q=None, num_r=None, num_pid=None, num_q_diff=None, num_pid_diff=None, num_negative_q_diff=None, num_negative_pid_diff=None):
     # 0. device setting
     device = torch.device('cpu') if config.gpu_id < 0 else torch.device('cuda:%d' % config.gpu_id)
     
@@ -22,14 +22,17 @@ def main(config, train_loader=None, valid_loader=None, test_loader=None, num_q=N
         num_q = num_q
         num_r = num_r
         num_pid = num_pid
-        num_diff = num_diff
+        num_q_diff = num_q_diff
+        num_pid_diff = num_pid_diff
+        num_negative_q_diff = num_negative_q_diff
+        num_negative_pid_diff = num_negative_pid_diff
     # 1-2. not use fivefold
     else:
         idx = 0
-        train_loader, valid_loader, test_loader, num_q, num_r, num_pid, num_diff = get_loaders(config, idx)
+        train_loader, valid_loader, test_loader, num_q, num_r, num_pid, num_q_diff, num_pid_diff, num_negative_q_diff, num_negative_pid_diff = get_loaders(config, idx)
 
     # 2. select models using get_models
-    model = get_models(num_q, num_r, num_pid, num_diff, device, config)
+    model = get_models(num_q, num_r, num_pid, num_q_diff, num_pid_diff, num_negative_q_diff, num_negative_pid_diff, device, config)
     
     # 3. select optimizers using get_optimizers
     optimizer = get_optimizers(model, config)
@@ -74,10 +77,10 @@ if __name__ == "__main__":
         test_rmse_scores_list = []
         
         for idx in range(5):
-            train_loader, valid_loader, test_loader, num_q, num_r, num_pid, num_diff = get_loaders(config, idx)
+            train_loader, valid_loader, test_loader, num_q, num_r, num_pid, num_q_diff, num_pid_diff, num_negative_q_diff, num_negative_pid_diff = get_loaders(config, idx)
             train_auc_scores, valid_aue_scores, test_auc_scores, \
                 train_rmse_scores, valid_rmse_scores, test_rmse_scores, \
-                    best_auc_test_score, best_rmse_test_score, record_time= main(config, train_loader, valid_loader, test_loader, num_q, num_r, num_pid, num_diff)
+                    best_auc_test_score, best_rmse_test_score, record_time= main(config, train_loader, valid_loader, test_loader, num_q, num_r, num_pid, num_q_diff, num_pid_diff, num_negative_q_diff, num_negative_pid_diff)
             test_auc_scores_list.append(best_auc_test_score)
             test_rmse_scores_list.append(best_rmse_test_score)
 

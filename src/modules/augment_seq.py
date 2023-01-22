@@ -7,7 +7,8 @@ def augment_seq_func(
     q_seqs,
     pid_seqs,
     r_seqs,
-    diff_seqs,
+    q_diff_seqs,
+    pid_diff_seqs,
     mask_seqs,
     num_q,
     num_pid,
@@ -23,15 +24,27 @@ def augment_seq_func(
     masked_q_seqs = q_seqs
     masked_pid_seqs = pid_seqs
     masked_r_seqs = r_seqs
-    masked_diff_seqs = diff_seqs
+    masked_q_diff_seqs = q_diff_seqs
+    masked_pid_diff_seqs = pid_diff_seqs
     augment_mask_seqs = mask_seqs
 
+    '''
+    concept과 question에 대한 mask
+    '''
     if config.mask_prob > 0:
         masked_q_seqs, masked_pid_seqs, masked_r_seqs, augment_mask_seqs = concept_question_mask_func(
             q_seqs, pid_seqs, r_seqs, mask_seqs, num_q, num_pid, device, config
             )
+    '''
+    일정 부분만큼 잘라내기
+    '''
+    if config.crop_prob > 0:
+        masked_q_seqs, masked_pid_seqs, masked_r_seqs, augment_mask_seqs = crop_func(
+            q_seqs, pid_seqs, r_seqs, mask_seqs, num_q, num_pid, device, config
+            )
 
-    return masked_q_seqs, masked_pid_seqs, masked_r_seqs, masked_diff_seqs, augment_mask_seqs
+
+    return masked_q_seqs, masked_pid_seqs, masked_r_seqs, masked_q_diff_seqs, masked_pid_diff_seqs, augment_mask_seqs
 
 
 def concept_question_mask_func(q_seqs, pid_seqs, r_seqs, mask_seqs, num_q, num_pid, device, config):
@@ -118,7 +131,8 @@ def crop_func(q_seqs, pid_seqs, r_seqs, mask_seqs, num_q, num_pid, device, confi
                 crop_mask_seqs.append(mask_seq.to(device))
             # real_q_seq_len > 5
             else:
-                start_idx = randint(0, real_q_seq_len - crop_seq_len + 1)
+                #start_idx = randint(0, real_q_seq_len - crop_seq_len + 1)
+                start_idx = randint(0, real_q_seq_len - crop_seq_len)
                 
                 masked_q_seq = real_q_seq[start_idx : start_idx + crop_seq_len].to(device)
                 masked_pid_seq = pid_seq[start_idx : start_idx + crop_seq_len].to(device)
@@ -142,11 +156,11 @@ def crop_func(q_seqs, pid_seqs, r_seqs, mask_seqs, num_q, num_pid, device, confi
                 crop_mask_seqs.append(crop_mask_seq.to(device))
 
         masked_q_seqs = torch.stack(crop_masked_q_seqs).to(device)
-        masked_pid_seq = torch.stack(crop_masked_pid_seqs).to(device)
+        masked_pid_seqs = torch.stack(crop_masked_pid_seqs).to(device)
         masked_r_seqs = torch.stack(crop_masked_r_seqs).to(device)
         augment_mask_seqs = torch.stack(crop_mask_seqs).to(device)
 
-            
+        return masked_q_seqs, masked_pid_seqs, masked_r_seqs, augment_mask_seqs
 
             # pad 추가하기!!!!
             # # cover the PAD(-1)
@@ -157,5 +171,3 @@ def crop_func(q_seqs, pid_seqs, r_seqs, mask_seqs, num_q, num_pid, device, confi
             # pad_q_seq = torch.cat((real_r_seq, pad_seq), dim=-1)
 
             # # pad 추가하기
-            # mask_q_seqs = 
-    pass
