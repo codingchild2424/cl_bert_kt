@@ -22,5 +22,7 @@ train.py \
 --segment_permute_prob 0 \
 --replace_higher_diff_prob 0 \
 --replace_lower_diff_prob 0 \
---concat_seq_prob 0.3 \
---use_cutoff False
+--concat_seq_prob 0 \
+--use_cutoff False \
+--use_span_cutoff False \
+--cutoff_prob 0 \
