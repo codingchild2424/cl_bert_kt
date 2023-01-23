@@ -70,7 +70,6 @@ def augment_seq_func(
         else:
             pass
 
-
     '''
     Permute Function
     '''
@@ -121,6 +120,13 @@ def augment_seq_func(
     '''
     Concat Two Sequence
     '''
+    if 1 > config.concat_seq_prob > 0:
+        if random() < config.concat_seq_prob:
+            masked_q_seqs, masked_pid_seqs, masked_r_seqs, augment_mask_seqs = concat_seq_func(
+                q_seqs, pid_seqs, r_seqs, mask_seqs, num_q, num_pid, device, config
+                )
+        else:
+            pass
 
 
     return masked_q_seqs, masked_pid_seqs, masked_r_seqs, masked_q_diff_seqs, masked_pid_diff_seqs, augment_mask_seqs
@@ -516,6 +522,7 @@ def replace_higher_diff_func(q_seqs, pid_seqs, r_seqs, q_diff_seqs, mask_seqs, n
 
     return masked_q_seqs, masked_pid_seqs, masked_r_seqs, replace_higher_mask_seqs
 
+
 def replace_lower_diff_func(q_seqs, pid_seqs, r_seqs, q_diff_seqs, mask_seqs, num_q, num_pid, device, config):
 
     replace_lower_masked_q_seqs = []
@@ -574,7 +581,103 @@ def replace_lower_diff_func(q_seqs, pid_seqs, r_seqs, q_diff_seqs, mask_seqs, nu
     return masked_q_seqs, masked_pid_seqs, masked_r_seqs, replace_lower_mask_seqs
 
 
-# def replace_lower_diff_func(q_seqs, pid_seqs, r_seqs, q_diff_seqs, mask_seqs, num_q, num_pid, device, config):
+def concat_seq_func(q_seqs, pid_seqs, r_seqs, mask_seqs, num_q, num_pid, device, config):
+
+    # choose num is q_seqs.size(0) * config.concat_prob
+    concat_num = int(q_seqs.size(0) * config.concat_seq_prob)
+
+    # make real_q_seqs
+    real_q_seqs = []
+    real_pid_seqs = []
+    real_r_seqs = []
+    real_mask_seqs = []
+
+    for i in range(q_seqs.size(0)):
+        real_q_seq = torch.masked_select(q_seqs[i].to(device), mask_seqs[i].to(device)).to(device)
+        real_pid_seq = torch.masked_select(pid_seqs[i].to(device), mask_seqs[i].to(device)).to(device)
+        real_r_seq = torch.masked_select(r_seqs[i].to(device), mask_seqs[i].to(device)).to(device)
+        real_mask_seq = torch.masked_select(mask_seqs[i].to(device), mask_seqs[i].to(device)).to(device)
+        real_q_seqs.append(real_q_seq.to(device))
+        real_pid_seqs.append(real_pid_seq.to(device))
+        real_r_seqs.append(real_r_seq.to(device))
+        real_mask_seqs.append(real_mask_seq.to(device))
+
+    # choose two random q_seq in q_seqs, if sum of q_seq_len is less than config.max_seq_len, concat them
+    # but the whole q_seqs.size(0) have to be same at first
+    concat_q_seqs = []
+    concat_pid_seqs = []
+    concat_r_seqs = []
+    concat_mask_seqs = []
+
+    for i in range(concat_num):
+        q_seq1_index = randint(0, q_seqs.size(0) - 1)
+        q_seq2_index = randint(0, q_seqs.size(0) - 1)
+        q_seq1_len = real_q_seqs[q_seq1_index].size(0)
+        q_seq2_len = real_q_seqs[q_seq2_index].size(0)
+        if q_seq1_len + q_seq2_len <= config.max_seq_len:
+            concat_q_seq = torch.cat((real_q_seqs[q_seq1_index], real_q_seqs[q_seq2_index]), dim=-1)
+            concat_pid_seq = torch.cat((real_pid_seqs[q_seq1_index], real_pid_seqs[q_seq2_index]), dim=-1)
+            concat_r_seq = torch.cat((real_r_seqs[q_seq1_index], real_r_seqs[q_seq2_index]), dim=-1)
+            concat_mask_seq = torch.cat((real_mask_seqs[q_seq1_index], real_mask_seqs[q_seq2_index]), dim=-1)
+
+            # add pad, if concat_q_seq is less than config.max_seq_len
+            if concat_q_seq.size(0) < config.max_seq_len:
+                pad_len = config.max_seq_len - concat_q_seq.size(0)
+                pad_seq = torch.full((1, pad_len), 0).squeeze(0).to(device)
+                concat_q_seq = torch.cat((concat_q_seq, pad_seq), dim=-1)
+                concat_pid_seq = torch.cat((concat_pid_seq, pad_seq), dim=-1)
+                concat_r_seq = torch.cat((concat_r_seq, pad_seq), dim=-1)
+                concat_mask_seq = torch.cat((concat_mask_seq, pad_seq), dim=-1)
+
+            concat_q_seqs.append(concat_q_seq.to(device))
+            concat_pid_seqs.append(concat_pid_seq.to(device))
+            concat_r_seqs.append(concat_r_seq.to(device))
+            concat_mask_seqs.append(concat_mask_seq.to(device))
+
+    # pad the real_q_seqs and rename to pad_q_seqs
+    pad_q_seqs = []
+    pad_pid_seqs = []
+    pad_r_seqs = []
+    pad_mask_seqs = []
+
+    for i in range(q_seqs.size(0)):
+        if real_q_seqs[i].size(0) < config.max_seq_len:
+            pad_len = config.max_seq_len - real_q_seqs[i].size(0)
+            pad_seq = torch.full((1, pad_len), 0).squeeze(0).to(device)
+            pad_q_seq = torch.cat((real_q_seqs[i], pad_seq), dim=-1)
+            pad_pid_seq = torch.cat((real_pid_seqs[i], pad_seq), dim=-1)
+            pad_r_seq = torch.cat((real_r_seqs[i], pad_seq), dim=-1)
+            pad_mask_seq = torch.cat((real_mask_seqs[i], pad_seq), dim=-1)
+        else:
+            pad_q_seq = real_q_seqs[i]
+            pad_pid_seq = real_pid_seqs[i]
+            pad_r_seq = real_r_seqs[i]
+            pad_mask_seq = real_mask_seqs[i]
+
+        pad_q_seqs.append(pad_q_seq.to(device))
+        pad_pid_seqs.append(pad_pid_seq.to(device))
+        pad_r_seqs.append(pad_r_seq.to(device))
+        pad_mask_seqs.append(pad_mask_seq.to(device))
+
+    # replace concat_num of real_q_seqs to concat_q_seqs
+    for i in range(concat_num):
+        try:
+            pad_q_seqs[i] = concat_q_seqs[i]
+            pad_pid_seqs[i] = concat_pid_seqs[i]
+            pad_r_seqs[i] = concat_r_seqs[i]
+            pad_mask_seqs[i] = concat_mask_seqs[i]
+        except:
+            pass
+
+    # convert list to tensor
+    pad_q_seqs = torch.stack(pad_q_seqs, dim=0)
+    pad_pid_seqs = torch.stack(pad_pid_seqs, dim=0)
+    pad_r_seqs = torch.stack(pad_r_seqs, dim=0)
+    pad_mask_seqs = torch.stack(pad_mask_seqs, dim=0)
+
+    return pad_q_seqs, pad_pid_seqs, pad_r_seqs, pad_mask_seqs
 
 
-#     pass
+
+
+    

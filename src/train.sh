@@ -21,5 +21,6 @@ train.py \
 --permute_prob 0 \
 --segment_permute_prob 0 \
 --replace_higher_diff_prob 0 \
---replace_lower_diff_prob 0.3 \
+--replace_lower_diff_prob 0 \
+--concat_seq_prob 0.3 \
 --use_cutoff False
