@@ -19,6 +19,7 @@ train.py \
 --summarize_prob 0 \
 --reverse_prob 0 \
 --permute_prob 0 \
---segment_permute_prob 0.3 \
---replace_prob 0 \
+--segment_permute_prob 0 \
+--replace_higher_diff_prob 0 \
+--replace_lower_diff_prob 0.3 \
 --use_cutoff False

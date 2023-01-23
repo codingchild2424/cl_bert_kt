@@ -93,6 +93,35 @@ def augment_seq_func(
         else:
             pass
 
+    '''
+    replace higher diff
+    '''
+    if 1 > config.replace_higher_diff_prob > 0:
+        if random() < config.replace_higher_diff_prob:
+            masked_q_seqs, masked_pid_seqs, masked_r_seqs, augment_mask_seqs = replace_higher_diff_func(
+                # 난이도 추가
+                q_seqs, pid_seqs, r_seqs, q_diff_seqs, mask_seqs, num_q, num_pid, device, config
+                )
+        else:
+            pass
+
+    '''
+    replace lower diff
+    '''
+    if 1 > config.replace_lower_diff_prob > 0:
+        if random() < config.replace_lower_diff_prob:
+            masked_q_seqs, masked_pid_seqs, masked_r_seqs, augment_mask_seqs = replace_lower_diff_func(
+                # 난이도 추가
+                q_seqs, pid_seqs, r_seqs, q_diff_seqs, mask_seqs, num_q, num_pid, device, config
+                )
+        else:
+            pass             
+
+
+    '''
+    Concat Two Sequence
+    '''
+
 
     return masked_q_seqs, masked_pid_seqs, masked_r_seqs, masked_q_diff_seqs, masked_pid_diff_seqs, augment_mask_seqs
 
@@ -430,4 +459,122 @@ def segment_permute_func(q_seqs, pid_seqs, r_seqs, mask_seqs, num_q, num_pid, de
     return masked_q_seqs, masked_pid_seqs, masked_r_seqs, segment_permute_mask_seqs
 
 
-    # pass
+def replace_higher_diff_func(q_seqs, pid_seqs, r_seqs, q_diff_seqs, mask_seqs, num_q, num_pid, device, config):
+    
+    replace_higher_masked_q_seqs = []
+    replace_higher_masked_pid_seqs = []
+    replace_higher_masked_r_seqs = []
+    replace_higher_mask_seqs = []
+
+    for q_seq, pid_seq, r_seq, q_diff_seq, mask_seq in zip(q_seqs, pid_seqs, r_seqs, q_diff_seqs, mask_seqs):
+
+        q_len = q_seq.size(0)
+
+        real_q_seq = torch.masked_select(q_seq.to(device), mask_seq.to(device)).to(device)
+        real_pid_seq = torch.masked_select(pid_seq.to(device), mask_seq.to(device)).to(device)
+        real_r_seq = torch.masked_select(r_seq.to(device), mask_seq.to(device)).to(device)
+        real_q_diff_seq = torch.masked_select(q_diff_seq.to(device), mask_seq.to(device)).to(device)
+
+        real_q_seq_len = real_q_seq.size(0)
+
+        if real_q_seq_len <= 5:
+            replace_higher_masked_q_seqs.append(q_seq.to(device))
+            replace_higher_masked_pid_seqs.append(pid_seq.to(device))
+            replace_higher_masked_r_seqs.append(r_seq.to(device))
+            replace_higher_mask_seqs.append(mask_seq.to(device))
+        else:
+            replace_len = int(real_q_seq_len * config.replace_higher_diff_prob)
+            # choose indexes which real_q_diff_seq is lower than others, a number of replace_len
+            replace_lower_indexes = torch.topk(real_q_diff_seq, replace_len, largest=False)[1]
+
+            replace_higher_indexes = torch.topk(real_q_diff_seq, replace_len, largest=True)[1]
+
+            # replace the real_q_seq with the indexes of replace_lower_indexes to the real_q_seq with the indexes of replace_higher_indexes
+            for i in range(replace_len):
+                real_q_seq[replace_lower_indexes[i]] = real_q_seq[replace_higher_indexes[i]]
+            
+            pad_len = q_len - real_q_seq_len
+
+            pad_seq = torch.full((1, pad_len), 0).squeeze(0).to(device)
+            pad_q_seq = torch.cat((real_q_seq, pad_seq), dim=-1)
+            pad_pid_seq = torch.cat((real_pid_seq, pad_seq), dim=-1)
+            pad_r_seq = torch.cat((real_r_seq, pad_seq), dim=-1)
+            replace_mask_seq = torch.cat((
+                torch.ones(real_q_seq_len).to(device),
+                pad_seq), dim=-1)
+            replace_mask_seq = torch.tensor(replace_mask_seq, dtype=torch.bool)
+
+            replace_higher_masked_q_seqs.append(pad_q_seq.to(device))
+            replace_higher_masked_pid_seqs.append(pad_pid_seq.to(device))
+            replace_higher_masked_r_seqs.append(pad_r_seq.to(device))
+            replace_higher_mask_seqs.append(replace_mask_seq.to(device))
+
+    masked_q_seqs = torch.stack(replace_higher_masked_q_seqs).to(device)
+    masked_pid_seqs = torch.stack(replace_higher_masked_pid_seqs).to(device)
+    masked_r_seqs = torch.stack(replace_higher_masked_r_seqs).to(device)
+    replace_higher_mask_seqs = torch.stack(replace_higher_mask_seqs).to(device)
+
+    return masked_q_seqs, masked_pid_seqs, masked_r_seqs, replace_higher_mask_seqs
+
+def replace_lower_diff_func(q_seqs, pid_seqs, r_seqs, q_diff_seqs, mask_seqs, num_q, num_pid, device, config):
+
+    replace_lower_masked_q_seqs = []
+    replace_lower_masked_pid_seqs = []
+    replace_lower_masked_r_seqs = []
+    replace_lower_mask_seqs = []
+
+    for q_seq, pid_seq, r_seq, q_diff_seq, mask_seq in zip(q_seqs, pid_seqs, r_seqs, q_diff_seqs, mask_seqs):
+            
+            q_len = q_seq.size(0)
+    
+            real_q_seq = torch.masked_select(q_seq.to(device), mask_seq.to(device)).to(device)
+            real_pid_seq = torch.masked_select(pid_seq.to(device), mask_seq.to(device)).to(device)
+            real_r_seq = torch.masked_select(r_seq.to(device), mask_seq.to(device)).to(device)
+            real_q_diff_seq = torch.masked_select(q_diff_seq.to(device), mask_seq.to(device)).to(device)
+    
+            real_q_seq_len = real_q_seq.size(0)
+    
+            if real_q_seq_len <= 5:
+                replace_lower_masked_q_seqs.append(q_seq.to(device))
+                replace_lower_masked_pid_seqs.append(pid_seq.to(device))
+                replace_lower_masked_r_seqs.append(r_seq.to(device))
+                replace_lower_mask_seqs.append(mask_seq.to(device))
+            else:
+                replace_len = int(real_q_seq_len * config.replace_lower_diff_prob)
+                # choose indexes which real_q_diff_seq is lower than others, a number of replace_len
+                replace_lower_indexes = torch.topk(real_q_diff_seq, replace_len, largest=False)[1]
+    
+                replace_higher_indexes = torch.topk(real_q_diff_seq, replace_len, largest=True)[1]
+    
+                # replace the real_q_seq with the indexes of replace_lower_indexes to the real_q_seq with the indexes of replace_higher_indexes
+                for i in range(replace_len):
+                    real_q_seq[replace_higher_indexes[i]] = real_q_seq[replace_lower_indexes[i]]
+                
+                pad_len = q_len - real_q_seq_len
+    
+                pad_seq = torch.full((1, pad_len), 0).squeeze(0).to(device)
+                pad_q_seq = torch.cat((real_q_seq, pad_seq), dim=-1)
+                pad_pid_seq = torch.cat((real_pid_seq, pad_seq), dim=-1)
+                pad_r_seq = torch.cat((real_r_seq, pad_seq), dim=-1)
+                replace_mask_seq = torch.cat((
+                    torch.ones(real_q_seq_len).to(device),
+                    pad_seq), dim=-1)
+                replace_mask_seq = torch.tensor(replace_mask_seq, dtype=torch.bool)
+    
+                replace_lower_masked_q_seqs.append(pad_q_seq.to(device))
+                replace_lower_masked_pid_seqs.append(pad_pid_seq.to(device))
+                replace_lower_masked_r_seqs.append(pad_r_seq.to(device))
+                replace_lower_mask_seqs.append(replace_mask_seq.to(device))
+
+    masked_q_seqs = torch.stack(replace_lower_masked_q_seqs).to(device)
+    masked_pid_seqs = torch.stack(replace_lower_masked_pid_seqs).to(device)
+    masked_r_seqs = torch.stack(replace_lower_masked_r_seqs).to(device)
+    replace_lower_mask_seqs = torch.stack(replace_lower_mask_seqs).to(device)
+
+    return masked_q_seqs, masked_pid_seqs, masked_r_seqs, replace_lower_mask_seqs
+
+
+# def replace_lower_diff_func(q_seqs, pid_seqs, r_seqs, q_diff_seqs, mask_seqs, num_q, num_pid, device, config):
+
+
+#     pass
