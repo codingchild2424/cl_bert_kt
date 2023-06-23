@@ -4,6 +4,7 @@ from torch.utils.data import DataLoader, random_split, Subset, ConcatDataset
 from dataloaders.pid_loader import PID_LOADER
 from dataloaders.sim_loader import SIM_LOADER
 from dataloaders.sim_diff_loader import SIM_DIFF_LOADER
+from dataloaders.sim_diff_llm_loader import SIM_DIFF_LLM_LOADER
 
 def get_loaders(config, idx=None):
 
@@ -25,10 +26,17 @@ def get_loaders(config, idx=None):
         dataset_dir = "../datasets/bridge_algebra06/preprocessed_df.csv"
     elif config.dataset_name == "ednet":
         dataset_dir = "../datasets/ednet/preprocessed_df.csv"
+    # real_dataset
+    elif config.dataset_name == "real_dataset":
+        dataset_dir = "../datasets/real_dataset/preprocessed_df.csv"
     
     # pid_loader or sim_loader
     if config.use_augment:
-        dataset = SIM_DIFF_LOADER(config.max_seq_len, dataset_dir, config, idx)
+        # use llm loader
+        if config.use_llm_loader:
+            dataset = SIM_DIFF_LLM_LOADER(config.max_seq_len, dataset_dir, config, idx)
+        else:
+            dataset = SIM_DIFF_LOADER(config.max_seq_len, dataset_dir, config, idx)
     else:
         dataset = PID_LOADER(config.max_seq_len, dataset_dir)
 

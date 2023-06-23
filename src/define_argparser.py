@@ -44,6 +44,10 @@ def define_argparser():
     # augmentation
     p.add_argument('--use_augment', type=bool, default=False)
     p.add_argument('--seed', type=float, default=12405)
+
+    # llm loader
+    p.add_argument('--use_llm_loader', type=bool, default=False)
+
     # augmentation mask
     p.add_argument('--mask_prob', type=float, default=0.2)
     p.add_argument('--crop_prob', type=float, default=0.3)
