@@ -6,7 +6,7 @@ from dataloaders.sim_loader import SIM_LOADER
 from dataloaders.sim_diff_loader import SIM_DIFF_LOADER
 from dataloaders.sim_diff_llm_loader import SIM_DIFF_LLM_LOADER
 
-def get_loaders(config, idx=None):
+def get_loaders(config, device=None, idx=None):
 
     num_q = None
     num_r = None
@@ -34,7 +34,7 @@ def get_loaders(config, idx=None):
     if config.use_augment:
         # use llm loader
         if config.use_llm_loader:
-            dataset = SIM_DIFF_LLM_LOADER(config.max_seq_len, dataset_dir, config, idx)
+            dataset = SIM_DIFF_LLM_LOADER(config.max_seq_len, dataset_dir, config, device, idx)
         else:
             dataset = SIM_DIFF_LOADER(config.max_seq_len, dataset_dir, config, idx)
     else:

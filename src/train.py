@@ -35,7 +35,7 @@ def main(config, train_loader=None, valid_loader=None, test_loader=None, num_q=N
     # 1-2. not use fivefold
     else:
         idx = 0
-        train_loader, valid_loader, test_loader, num_q, num_r, num_pid, num_q_diff, num_pid_diff, num_negative_q_diff, num_negative_pid_diff = get_loaders(config, idx)
+        train_loader, valid_loader, test_loader, num_q, num_r, num_pid, num_q_diff, num_pid_diff, num_negative_q_diff, num_negative_pid_diff = get_loaders(config, device, idx)
 
     # 2. select models using get_models
     model = get_models(num_q, num_r, num_pid, num_q_diff, num_pid_diff, num_negative_q_diff, num_negative_pid_diff, device, config)
@@ -74,7 +74,14 @@ def main(config, train_loader=None, valid_loader=None, test_loader=None, num_q=N
 # If you used python train.py, then this will be start first
 if __name__ == "__main__":
     # get config from define_argparser
-    config = define_argparser() 
+    config = define_argparser()
+
+    # For M1, M2 GPU
+    if config.use_mps_gpu == True:
+        device = torch.device(config.mps_gpu_id if torch.backends.mps.is_available() else 'cpu')
+    # For CUDA
+    else:
+        device = torch.device('cpu') if config.gpu_id < 0 else torch.device('cuda:%d' % config.gpu_id)
 
     # if fivefold = True
     if config.fivefold == True:
@@ -83,7 +90,7 @@ if __name__ == "__main__":
         test_rmse_scores_list = []
         
         for idx in range(5):
-            train_loader, valid_loader, test_loader, num_q, num_r, num_pid, num_q_diff, num_pid_diff, num_negative_q_diff, num_negative_pid_diff = get_loaders(config, idx)
+            train_loader, valid_loader, test_loader, num_q, num_r, num_pid, num_q_diff, num_pid_diff, num_negative_q_diff, num_negative_pid_diff = get_loaders(config, device, idx)
             train_auc_scores, valid_aue_scores, test_auc_scores, \
                 train_rmse_scores, valid_rmse_scores, test_rmse_scores, \
                     best_auc_test_score, best_rmse_test_score, record_time= main(config, train_loader, valid_loader, test_loader, num_q, num_r, num_pid, num_q_diff, num_pid_diff, num_negative_q_diff, num_negative_pid_diff)

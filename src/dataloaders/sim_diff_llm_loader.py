@@ -26,10 +26,13 @@ class SIM_DIFF_LLM_LOADER(Dataset):
             self, 
             max_seq_len, 
             dataset_dir, 
-            config, 
+            config,
+            device,
             idx=None
             ) -> None:
         super(SIM_DIFF_LLM_LOADER, self).__init__()
+
+        self.device = device
 
         ##########################################################
         # Transformers
@@ -323,8 +326,8 @@ class SIM_DIFF_LLM_LOADER(Dataset):
         unique_train_pid_seqs = np.unique(train_df["pid"].values)
 
         # valid, test에는 있지만 train에는 없는 q와 pid 목록 구하기
-        not_contained_train_q_seqs_list = np.setdiff1d(unique_q_seqs, unique_train_q_seqs)
-        not_contained_train_seqs_list = np.setdiff1d(unique_pid_seqs, unique_train_pid_seqs)
+        not_contained_train_q_list = np.setdiff1d(unique_q_seqs, unique_train_q_seqs)
+        not_contained_train_pid_list = np.setdiff1d(unique_pid_seqs, unique_train_pid_seqs)
 
         # print("not_contained_train_q_seqs_list", not_contained_train_q_seqs_list)
         # print("not_contained_train_seqs_list", not_contained_train_seqs_list)
@@ -364,28 +367,27 @@ class SIM_DIFF_LLM_LOADER(Dataset):
         print("finetuned_bert_model", finetuned_bert_model)
 
         # inference
+        if not_contained_train_q_list != []:
 
-        if not_contained_train_q_seqs_list != []:
+            not_contained_train_qs = []
+            not_contained_train_q_texts = []
 
-            not_contained_q_texts = []
-
-            for idx, not_contained_train_q_seq in enumerate(not_contained_train_q_seqs_list):
+            for idx, not_contained_train_q in enumerate(not_contained_train_q_list):
                     
-                    not_contained_q_text = q_text2idx[not_contained_train_q_seq]
-                    not_contained_q_texts.append(not_contained_q_text)
+                not_contained_train_qs.append(not_contained_train_q)
 
-            # inference not_contained_q_texts using finetuned_bert_model
-            not_contained_q_diffs = finetuned_bert_model(not_contained_q_texts)
+                not_contained_train_q_text = q_text2idx[idx]
+                not_contained_train_q_texts.append(not_contained_train_q_text)
 
+            # llm_inference
+            pred_diffs = self.llm_inference(
+                model=finetuned_bert_model,
+                src_texts=not_contained_train_q_texts,
+            )
 
-
-        
-        # finetuned_bert_model = self.llm_training(
-        #     train_df=
-        #     test_df=
-        #     )
-
-
+            # make dictionaries using not_contained_train_qs and pred_diffs
+            # key is not_contained_train_q, value is pred_diff
+            not_contained_train_q_diff_dict = dict(zip(not_contained_train_qs, pred_diffs))
 
 
         q_diff_seqs = []
@@ -403,9 +405,10 @@ class SIM_DIFF_LLM_LOADER(Dataset):
 
             for q in q_seq:
                 if q not in train_q_list:
-                    q_diff_seq.append(float(75)) # <PAD>
-                    negative_q_diff_seq.append(float(25))
-                    train_negative_q_diff_seqs.append(float(25))
+
+                    q_diff_seq.append(not_contained_train_q_diff_dict[q])
+                    negative_q_diff_seq.append(100 - not_contained_train_q_diff_dict[q])
+                    train_negative_q_diff_seqs.append(1 - not_contained_train_q_diff_dict[q])
                 else:
                     q_diff_seq.append(train_q_diff[q])
                     negative_q_diff_seq.append(100 - train_q_diff[q])
@@ -421,6 +424,59 @@ class SIM_DIFF_LLM_LOADER(Dataset):
         ############################################################
         train_pid_diff = np.round(train_df.groupby('pid')['r'].mean() * 100)
         pid_diff_list = np.unique(train_df.groupby('pid')['r'].mean()) 
+
+
+        ############################################################
+        # training 데이터만을 활용하여 pid_diff 예측모델 만들기
+        ############################################################
+        # not_contained_train_pid_list
+
+        pid_texts = []
+        diffs = []
+
+        for idx, diff in enumerate(train_pid_diff):
+            pid_text = pid_text2idx[idx]
+
+            pid_texts.append(pid_text)
+            diffs.append(diff)
+
+        train_pid_text_diff_df = pd.DataFrame(
+            zip(pid_texts, diffs), 
+            columns = ["pid_text", "diff"]
+            )
+        
+        print("train_pid_text_diff_df", train_pid_text_diff_df)
+
+        finetuned_bert_model = self.llm_training(
+            df=train_pid_text_diff_df,
+            src_col="pid_text",
+            tgt_col="diff")
+        
+        print("finetuned_bert_model", finetuned_bert_model)
+
+        # inference
+        if not_contained_train_pid_list != []:
+
+            not_contained_train_pids = []
+            not_contained_train_pid_texts = []
+
+            for idx, not_contained_train_pid in enumerate(not_contained_train_pid_list):
+                    
+                not_contained_train_pids.append(not_contained_train_pid)
+
+                not_contained_train_pid_text = pid_text2idx[idx]
+                not_contained_train_pid_texts.append(not_contained_train_pid_text)
+
+            # llm_inference
+            pred_diffs = self.llm_inference(
+                model=finetuned_bert_model,
+                src_texts=not_contained_train_pid_texts,
+            )
+
+            # make dictionaries using not_contained_train_pids and pred_diffs
+            # key is not_contained_train_pid, value is pred_diff
+            not_contained_train_pid_diff_dict = dict(zip(not_contained_train_pids, pred_diffs))
+
 
         pid_diff_seqs = []
         negative_pid_diff_seqs = [] # for neg contrastive learning
@@ -440,11 +496,13 @@ class SIM_DIFF_LLM_LOADER(Dataset):
 
             for pid in pid_seq:
                 if pid not in train_pid_list:
-                    pid_diff_seq.append(float(75)) # <PAD>
-                    negative_pid_diff_seq.append(float(25))
+                    pid_diff_seq.append(not_contained_train_pid_diff_dict[pid]) # <PAD>
+                    negative_pid_diff_seq.append(100 - not_contained_train_pid_diff_dict[pid])
+                    train_negative_pid_diff_seqs.append(1 - not_contained_train_pid_diff_dict[pid])
                 else:
                     pid_diff_seq.append(train_pid_diff[pid])
                     negative_pid_diff_seq.append(100 - train_pid_diff[pid])
+                    train_negative_pid_diff_seqs.append(1 - train_pid_diff[pid])
 
             pid_diff_seqs.append(pid_diff_seq)
             negative_pid_diff_seqs.append(negative_pid_diff_seq)
@@ -672,6 +730,34 @@ class SIM_DIFF_LLM_LOADER(Dataset):
         trainer.train()
 
         return model
+
+    def llm_inference(self, model, sentence_list):
+
+        # Preprocess the sentences
+        encoded_input = self.tokenizer(
+            sentence_list, 
+            truncation=True, 
+            padding=True, 
+            max_length=512, 
+            return_tensors='pt'
+            )
+
+        # Compute predictions
+        with torch.no_grad():
+            raw_predictions = model(
+                encoded_input['input_ids'].to(self.device),
+                attention_mask=encoded_input['attention_mask'].to(self.device)
+            )[0]
+        
+        # Convert raw predictions to desired output
+        predictions = raw_predictions.cpu().numpy()
+
+        results = []
+
+        for i in predictions:
+            results.extend(i)
+
+        return results
 
 
 class BertDataset(torch.utils.data.Dataset):
