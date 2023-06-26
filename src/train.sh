@@ -5,8 +5,10 @@
 python \
 train.py \
 --model_fn cl_monacobert_cl_0_1_no_augment_use_llm.pth \
+--use_mps_gpu True \
+--mps_gpu_id mps:0 \
 --model_name cl_monacobert \
---dataset_name assist09 \
+--dataset_name real_dataset \
 --num_encoder 4 \
 --hidden_size 128 \
 --batch_size 128 \

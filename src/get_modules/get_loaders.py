@@ -28,7 +28,7 @@ def get_loaders(config, idx=None):
         dataset_dir = "../datasets/ednet/preprocessed_df.csv"
     # real_dataset
     elif config.dataset_name == "real_dataset":
-        dataset_dir = "../datasets/real_dataset/preprocessed_df.csv"
+        dataset_dir = "../datasets/real_dataset"
     
     # pid_loader or sim_loader
     if config.use_augment:

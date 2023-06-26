@@ -7,6 +7,10 @@ def define_argparser():
     # model_file_name
     p.add_argument('--model_fn', required=True)
 
+    # m1 gpu
+    p.add_argument('--use_mps_gpu', type=bool, default=False)
+    p.add_argument('--mps_gpu_id', type=str, default="mps:0")
+
     # basic arguments
     p.add_argument('--gpu_id', type=int, default=0 if torch.cuda.is_available() else -1)
     p.add_argument('--train_ratio', type=float, default=.8)
@@ -62,6 +66,9 @@ def define_argparser():
     p.add_argument('--use_cutoff', type=bool, default=False)
     p.add_argument('--use_span_cutoff', type=bool, default=True)
     p.add_argument('--cutoff_prob', type=float, default=0.01)
+
+    # transfomers
+    p.add_argument('--bert_model_name', type=str, default='beomi/kobert')
 
     
 
