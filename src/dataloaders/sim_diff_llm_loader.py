@@ -200,12 +200,6 @@ class SIM_DIFF_LLM_LOADER(Dataset):
                 skill_texts.append(skill_text)
                 item_texts.append(item_text)
 
-            ############################################################
-            # 나중에 없애기
-            ############################################################
-            if idx == 100:
-                break
-
         df = pd.DataFrame({
             'user_id': user_ids,
             'skill_id': skill_ids,
