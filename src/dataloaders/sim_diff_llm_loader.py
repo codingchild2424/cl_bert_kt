@@ -406,7 +406,7 @@ class SIM_DIFF_LLM_LOADER(Dataset):
             for q in q_seq:
                 if q not in train_q_list:
 
-                    if not_contained_train_q_diff_dict != {}:
+                    if not_contained_train_q_list != []:
                         q_diff_seq.append(not_contained_train_q_diff_dict[q])
                         negative_q_diff_seq.append(100 - not_contained_train_q_diff_dict[q])
                         train_negative_q_diff_seqs.append(1 - not_contained_train_q_diff_dict[q])
@@ -502,7 +502,7 @@ class SIM_DIFF_LLM_LOADER(Dataset):
             for pid in pid_seq:
                 if pid not in train_pid_list:
 
-                    if not_contained_train_pid_diff_dict != {}:
+                    if not_contained_train_pid_list != []:
                         pid_diff_seq.append(not_contained_train_pid_diff_dict[pid]) # <PAD>
                         negative_pid_diff_seq.append(100 - not_contained_train_pid_diff_dict[pid])
                         train_negative_pid_diff_seqs.append(1 - not_contained_train_pid_diff_dict[pid])
