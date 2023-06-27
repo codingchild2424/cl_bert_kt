@@ -2,6 +2,7 @@ checkpoints/
 datasets/
 model_records/
 score_records/
+results/
 
 __pycache__/
 *.py[cod]
