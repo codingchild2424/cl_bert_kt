@@ -381,7 +381,7 @@ class SIM_DIFF_LLM_LOADER(Dataset):
 
             # make dictionaries using not_contained_train_qs and pred_diffs
             # key is not_contained_train_q, value is pred_diff
-            not_contained_train_q_diff_dict = dict(zip(not_contained_train_qs, pred_diffs))
+            not_contained_train_q_diff_dict = dict(zip(not_contained_train_qs, float(pred_diffs * 100)))
 
 
         q_diff_seqs = []
@@ -474,7 +474,7 @@ class SIM_DIFF_LLM_LOADER(Dataset):
 
             # make dictionaries using not_contained_train_pids and pred_diffs
             # key is not_contained_train_pid, value is pred_diff
-            not_contained_train_pid_diff_dict = dict(zip(not_contained_train_pids, pred_diffs))
+            not_contained_train_pid_diff_dict = dict(zip(not_contained_train_pids, float(pred_diffs * 100)))
 
 
         pid_diff_seqs = []
