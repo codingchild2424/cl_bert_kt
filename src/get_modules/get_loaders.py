@@ -33,10 +33,10 @@ def get_loaders(config, device=None, idx=None):
     # pid_loader or sim_loader
     if config.use_augment:
         # use llm loader
-        if config.use_llm_loader:
-            dataset = SIM_DIFF_LLM_LOADER(config.max_seq_len, dataset_dir, config, device, idx)
-        else:
-            dataset = SIM_DIFF_LOADER(config.max_seq_len, dataset_dir, config, idx)
+        # if config.use_llm_loader:
+        #     dataset = SIM_DIFF_LLM_LOADER(config.max_seq_len, dataset_dir, config, device, idx)
+        # else:
+        dataset = SIM_DIFF_LOADER(config.max_seq_len, dataset_dir, config, idx)
     else:
         dataset = PID_LOADER(config.max_seq_len, dataset_dir)
 

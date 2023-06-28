@@ -12,12 +12,11 @@ from define_argparser import define_argparser
 def main(config, train_loader=None, valid_loader=None, test_loader=None, num_q=None, num_r=None, num_pid=None, num_q_diff=None, num_pid_diff=None, num_negative_q_diff=None, num_negative_pid_diff=None):
     # 0. device setting
 
-    # For M1, M2 GPU
-    if config.use_mps_gpu == True:
-        device = torch.device(config.mps_gpu_id if torch.backends.mps.is_available() else 'cpu')
-    # For CUDA
-    else:
-        device = torch.device('cpu') if config.gpu_id < 0 else torch.device('cuda:%d' % config.gpu_id)
+    device = torch.device('cpu') if config.gpu_id < 0 else torch.device('cuda:%d' % config.gpu_id)
+
+    print("**********************")
+    print("DEVICE", device)
+    print("**********************")
 
     # 1. get dataset from loader
     # 1-1. use fivefold
@@ -76,12 +75,7 @@ if __name__ == "__main__":
     # get config from define_argparser
     config = define_argparser()
 
-    # For M1, M2 GPU
-    if config.use_mps_gpu == True:
-        device = torch.device(config.mps_gpu_id if torch.backends.mps.is_available() else 'cpu')
-    # For CUDA
-    else:
-        device = torch.device('cpu') if config.gpu_id < 0 else torch.device('cuda:%d' % config.gpu_id)
+    device = torch.device('cpu') if config.gpu_id < 0 else torch.device('cuda:%d' % config.gpu_id)
 
     # if fivefold = True
     if config.fivefold == True:
