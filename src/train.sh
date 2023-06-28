@@ -2,7 +2,7 @@
 
 # augmentation True
 
-python \
+CUDA_LAUNCH_BLOCKING=1 python \
 train.py \
 --model_fn cl_monacobert_cl_0_1_no_augment_use_llm.pth \
 --use_mps_gpu True \

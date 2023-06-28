@@ -401,17 +401,17 @@ class SIM_DIFF_LLM_LOADER(Dataset):
                 if q not in train_q_list:
 
                     if not_contained_train_q_list != []:
-                        q_diff_seq.append(not_contained_train_q_diff_dict[q])
-                        negative_q_diff_seq.append(100 - not_contained_train_q_diff_dict[q])
-                        train_negative_q_diff_seqs.append(1 - not_contained_train_q_diff_dict[q])
+                        q_diff_seq.append(float(not_contained_train_q_diff_dict[q]))
+                        negative_q_diff_seq.append(float(1 - not_contained_train_q_diff_dict[q]))
+                        train_negative_q_diff_seqs.append(float(1 - not_contained_train_q_diff_dict[q]))
                     else:
                         q_diff_seq.append(float(75))
                         negative_q_diff_seq.append(float(25))
                         train_negative_q_diff_seqs.append(float(25))
                 else:
-                    q_diff_seq.append(train_q_diff[q])
-                    negative_q_diff_seq.append(100 - train_q_diff[q])
-                    train_negative_q_diff_seqs.append(1 - train_q_diff[q])
+                    q_diff_seq.append(float(train_q_diff[q]))
+                    negative_q_diff_seq.append(float(1 - train_q_diff[q]))
+                    train_negative_q_diff_seqs.append(float(1 - train_q_diff[q]))
 
             q_diff_seqs.append(q_diff_seq)
             negative_q_diff_seqs.append(negative_q_diff_seq)
@@ -497,17 +497,17 @@ class SIM_DIFF_LLM_LOADER(Dataset):
                 if pid not in train_pid_list:
 
                     if not_contained_train_pid_list != []:
-                        pid_diff_seq.append(not_contained_train_pid_diff_dict[pid]) # <PAD>
-                        negative_pid_diff_seq.append(100 - not_contained_train_pid_diff_dict[pid])
-                        train_negative_pid_diff_seqs.append(1 - not_contained_train_pid_diff_dict[pid])
+                        pid_diff_seq.append(float(not_contained_train_pid_diff_dict[pid])) # <PAD>
+                        negative_pid_diff_seq.append(float(1 - not_contained_train_pid_diff_dict[pid]))
+                        train_negative_pid_diff_seqs.append(float(1 - not_contained_train_pid_diff_dict[pid]))
                     else:
                         pid_diff_seq.append(float(75))
                         negative_pid_diff_seq.append(float(25))
                         train_negative_pid_diff_seqs.append(float(25))
                 else:
-                    pid_diff_seq.append(train_pid_diff[pid])
-                    negative_pid_diff_seq.append(100 - train_pid_diff[pid])
-                    train_negative_pid_diff_seqs.append(1 - train_pid_diff[pid])
+                    pid_diff_seq.append(float(train_pid_diff[pid]))
+                    negative_pid_diff_seq.append(float(1 - train_pid_diff[pid]))
+                    train_negative_pid_diff_seqs.append(float(1 - train_pid_diff[pid]))
 
             pid_diff_seqs.append(pid_diff_seq)
             negative_pid_diff_seqs.append(negative_pid_diff_seq)
