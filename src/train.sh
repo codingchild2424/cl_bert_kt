@@ -2,35 +2,40 @@
 
 # augmentation True
 
-CUDA_LAUNCH_BLOCKING=1 python \
-train.py \
---model_fn cl_monacobert_cl_0_1_no_augment_use_llm.pth \
---use_mps_gpu True \
---mps_gpu_id mps:0 \
---model_name cl_monacobert \
---dataset_name real_dataset \
---num_encoder 4 \
---hidden_size 128 \
---batch_size 128 \
---grad_acc True \
---grad_acc_iter 4 \
---fivefold True \
---n_epochs 1000 \
---cl_lambda 0.1 \
---use_augment True \
---use_llm_loader True \
---mask_prob 0 \
---crop_prob 0 \
---summarize_prob 0 \
---reverse_prob 0 \
---permute_prob 0 \
---segment_permute_prob 0 \
---replace_higher_diff_prob 0 \
---replace_lower_diff_prob 0 \
---concat_seq_prob 0 \
---use_cutoff False \
---use_span_cutoff False \
---cutoff_prob 0
+dataset_names="assist09 assist12 assist17 algebra05 algebra06 ednet"
+
+for dataset_name in $dataset_names
+do
+    CUDA_VISIBLE_DEVICES=0 python \
+    train.py \
+    --model_fn cl_monacobert_cl_0_1_no_augment_$dataset_name.pth \
+    --use_mps_gpu False \
+    --model_name cl_monacobert \
+    --dataset_name $dataset_name \
+    --num_encoder 4 \
+    --hidden_size 128 \
+    --batch_size 256 \
+    --grad_acc True \
+    --grad_acc_iter 2 \
+    --fivefold True \
+    --n_epochs 1000 \
+    --cl_lambda 0.1 \
+    --use_augment True \
+    --use_llm_loader False \
+    --mask_prob 0 \
+    --crop_prob 0 \
+    --summarize_prob 0 \
+    --reverse_prob 0 \
+    --permute_prob 0 \
+    --segment_permute_prob 0 \
+    --replace_higher_diff_prob 0 \
+    --replace_lower_diff_prob 0 \
+    --concat_seq_prob 0 \
+    --use_cutoff False \
+    --use_span_cutoff False \
+    --cutoff_prob 0 \
+    --bert_model_name beomi/kobert
+done
 
 
 # probs="0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9"
@@ -64,4 +69,3 @@ train.py \
 #     --use_span_cutoff False \
 #     --cutoff_prob 0
 # done
-
