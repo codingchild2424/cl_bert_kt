@@ -1,4 +1,4 @@
-# DCL4KT+LLM: Difficulty-focused Contrasitve Learning for Knowledge Tracing with LLM
+# DCL4KT+LLM: Difficulty-focused Contrasitve Learning for Knowledge Tracing with Large Language Model
 
 This repository is for the research named Difficulty-focused Contrasitve Learning for Knowledge Tracing with LLM.  
 
