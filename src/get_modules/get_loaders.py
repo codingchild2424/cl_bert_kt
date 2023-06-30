@@ -26,19 +26,18 @@ def get_loaders(config, device=None, idx=None):
         dataset_dir = "../datasets/bridge_algebra06/preprocessed_df.csv"
     elif config.dataset_name == "ednet":
         dataset_dir = "../datasets/ednet/preprocessed_df.csv"
-    # real_dataset
-    elif config.dataset_name == "real_dataset":
-        dataset_dir = "../datasets/real_dataset"
+    elif config.dataset_name == "homerun20":
+        dataset_dir = "../datasets/homerun20/homerun20.tsv"
     
     # pid_loader or sim_loader
     if config.use_augment:
-        dataset = SIM_DIFF_LOADER(config.max_seq_len, dataset_dir, config, idx)
+        # use llm loader
+        if config.use_llm_loader==True:
+            dataset = SIM_DIFF_LLM_LOADER(config.max_seq_len, dataset_dir, config, device, idx)
+        else:
+            dataset = SIM_DIFF_LOADER(config.max_seq_len, dataset_dir, config, idx)
     else:
         dataset = PID_LOADER(config.max_seq_len, dataset_dir)
-
-    # 덮어쓰기
-    if config.use_llm_loader:
-        dataset = SIM_DIFF_LLM_LOADER(config.max_seq_len, dataset_dir, config, device, idx)
 
     num_q = dataset.num_q
     num_r = dataset.num_r

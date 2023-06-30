@@ -77,141 +77,7 @@ class SIM_DIFF_LLM_LOADER(Dataset):
 
     def preprocess(self):
 
-        ############################################################
-        # question_curriculum_link path
-        ############################################################
-        question_curriculum_link_path = os.path.join(self.dataset_dir, "questions.csv")
-        question_curriculum_link_df = pd.read_csv(
-            question_curriculum_link_path,
-            encoding="utf-8",
-            sep='|'
-        )
-
-        """
-        question_id|question_type|difficulty|behavior_id|curriculum_id
-        201144|61|2|1|11101
-        """
-
-        ############################################################
-        # curriculum_meta
-        ############################################################
-        curriculum_meta_path = os.path.join(self.dataset_dir, "curriculums.csv")
-        curriculum_meta_df = pd.read_csv(
-            curriculum_meta_path,
-            encoding="utf-8",
-            sep='|'
-        )
-
-        cur_ids = []
-        cur_texts = []
-
-        for row in curriculum_meta_df.iterrows():
-            cur_ids.append(row[1]['curriculum_id'])
-
-            cur_text = row[1]['curriculum_l_nm'] + " " + row[1]['curriculum_m_nm']
-
-            cur_texts.append(cur_text)
-
-        pre_c_meta_df = pd.DataFrame({
-            'curriculum_id': cur_ids,
-            'curriculum_text': cur_texts
-        })
-
-
-        ############################################################
-        # question meta
-        ############################################################
-        q_meta_path = os.path.join(self.dataset_dir, "question_meta.csv")
-        q_meta_df = pd.read_csv(
-            q_meta_path,
-            encoding="utf-8",
-            sep='|'
-        )
-
-        import re
-        def clean_html_tags(text):
-            clean = re.compile('<.*?>')
-            return re.sub(clean, '', text)
-        
-        q_meta_df['question_body'] = q_meta_df['question_body'].apply(clean_html_tags).str.replace("&nbsp;", " ")
-
-        pre_q_meta_df = q_meta_df[['question_id', 'question_body']]
-
-
-        ############################################################
-        # user_response data path 
-        ############################################################
-        user_response_folder_path = os.path.join(self.dataset_dir, "user_questions")
-        user_response_file_path_list = [
-            os.path.join(
-                user_response_folder_path, 
-                file_name
-                ) for file_name in os.listdir(user_response_folder_path)
-        ]
-
-        ############################################################
-        # 루프로 돌리기
-        ############################################################
-
-        user_ids = []
-        skill_ids = []
-        item_ids = []
-        corrects = []
-        eventtimes = [] # for sorting
-
-        skill_texts = []
-        item_texts = []
-
-        for idx, user_response_file_path in tqdm(enumerate(user_response_file_path_list)):
-
-            user_response_df = pd.read_csv(
-                user_response_file_path,
-                encoding="ISO-8859-1",
-                sep='|'
-            )
-
-            for row in user_response_df.iterrows():
-
-                user_id = row[1]['actor_id']
-
-                item_id = row[1]['question_id']
-
-                skill_id = question_curriculum_link_df[
-                    question_curriculum_link_df['question_id'] == item_id
-                ]['curriculum_id'].values[0]
-                
-                correct = row[1]['result']
-
-                # q_meta
-                skill_text = pre_c_meta_df[
-                    pre_c_meta_df['curriculum_id'] == skill_id
-                ]['curriculum_text']
-
-                item_text = pre_q_meta_df[
-                    pre_q_meta_df['question_id'] == item_id
-                ]['question_body']
-
-                user_ids.append(user_id)
-                skill_ids.append(skill_id)
-                item_ids.append(item_id)
-                corrects.append(correct)
-                eventtimes.append(row[1]['eventtime'])
-
-                skill_texts.append(skill_text)
-                item_texts.append(item_text)
-
-        df = pd.DataFrame({
-            'user_id': user_ids,
-            'skill_id': skill_ids,
-            'item_id': item_ids,
-            'correct': corrects,
-            'eventtime': eventtimes,
-            'skill_text': skill_texts,
-            'item_text': item_texts
-        })
-
-        #print(df.head())
-
+        df = pd.read_csv(self.dataset_dir, encoding="utf-8", sep='\t')
         df = df[(df["correct"] == 0) | (df["correct"] == 1)]
 
         # sort df using eventtime
@@ -720,7 +586,7 @@ class SIM_DIFF_LLM_LOADER(Dataset):
             return {'rmse': mean_squared_error(labels, predictions, squared=False)}
 
         model = self.bert_model
-        print(model)
+        #print(model)
 
         # Initialize the Trainer
         trainer = Trainer(
@@ -733,6 +599,9 @@ class SIM_DIFF_LLM_LOADER(Dataset):
 
         # Train the model
         trainer.train()
+
+        # Evaluate the model
+        trainer.evaluate()
 
         return model
 
