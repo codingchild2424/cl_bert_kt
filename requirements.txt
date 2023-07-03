@@ -1,0 +1,6 @@
+numpy
+pandas
+transformers
+accelerate
+matplotlib
+scikit-learn

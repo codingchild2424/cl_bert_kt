@@ -21,7 +21,7 @@ do
     --n_epochs 1000 \
     --cl_lambda 0.1 \
     --use_augment True \
-    --use_llm_loader False \
+    --loader_type SIM_DIFF_LOADER \
     --mask_prob 0 \
     --crop_prob 0 \
     --summarize_prob 0 \

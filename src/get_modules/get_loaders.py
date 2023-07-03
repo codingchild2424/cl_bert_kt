@@ -30,14 +30,14 @@ def get_loaders(config, device=None, idx=None):
         dataset_dir = "../datasets/homerun20/homerun20.tsv"
     
     # pid_loader or sim_loader
-    if config.use_augment:
-        # use llm loader
-        if config.use_llm_loader==True:
-            dataset = SIM_DIFF_LLM_LOADER(config.max_seq_len, dataset_dir, config, device, idx)
-        else:
-            dataset = SIM_DIFF_LOADER(config.max_seq_len, dataset_dir, config, idx)
-    else:
+    if config.loader_type == "PID_LOADER":
         dataset = PID_LOADER(config.max_seq_len, dataset_dir)
+    elif config.loader_type == "SIM_DIFF_LOADER":
+        dataset = SIM_DIFF_LOADER(config.max_seq_len, dataset_dir, config, idx)
+    elif config.loader_type == "SIM_DIFF_LLM_LOADER": 
+        dataset = SIM_DIFF_LLM_LOADER(config.max_seq_len, dataset_dir, config, device, idx)
+    else:
+        print("choose loader")
 
     num_q = dataset.num_q
     num_r = dataset.num_r

@@ -50,7 +50,7 @@ def define_argparser():
     p.add_argument('--seed', type=float, default=12405)
 
     # llm loader
-    p.add_argument('--use_llm_loader', type=bool, default=False)
+    p.add_argument('--loader_type', type=str, default='SIM_DIFF_LOADER')
 
     # augmentation mask
     p.add_argument('--mask_prob', type=float, default=0.2)
