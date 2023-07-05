@@ -3,6 +3,7 @@ datasets/
 model_records/
 score_records/
 results/
+src/analysis
 
 __pycache__/
 *.py[cod]

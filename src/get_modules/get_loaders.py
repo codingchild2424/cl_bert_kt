@@ -5,6 +5,7 @@ from dataloaders.pid_loader import PID_LOADER
 from dataloaders.sim_loader import SIM_LOADER
 from dataloaders.sim_diff_loader import SIM_DIFF_LOADER
 from dataloaders.sim_diff_llm_loader import SIM_DIFF_LLM_LOADER
+from dataloaders.sim_diff_loader_ablation import SIM_DIFF_LOADER_ABLATION
 
 def get_loaders(config, device=None, idx=None):
 
@@ -36,6 +37,8 @@ def get_loaders(config, device=None, idx=None):
         dataset = SIM_DIFF_LOADER(config.max_seq_len, dataset_dir, config, idx)
     elif config.loader_type == "SIM_DIFF_LLM_LOADER": 
         dataset = SIM_DIFF_LLM_LOADER(config.max_seq_len, dataset_dir, config, device, idx)
+    elif config.loader_type == "SIM_DIFF_LOADER_ABLATION":
+        dataset = SIM_DIFF_LOADER_ABLATION(config.max_seq_len, dataset_dir, config, idx)
     else:
         print("choose loader")
 

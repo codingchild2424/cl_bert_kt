@@ -2,26 +2,26 @@
 
 # augmentation True
 
-dataset_names="assist09 assist12 assist17 algebra05 algebra06 ednet"
+dataset_names="assist09 algebra05 algebra06 ednet"
 
 for dataset_name in $dataset_names
 do
     CUDA_VISIBLE_DEVICES=0 python \
     train.py \
-    --model_fn cl_monacobert_cl_0_1_no_augment_$dataset_name.pth \
+    --model_fn cl_monacobert_cl_0_1_no_augment_${dataset_name}_ablation.pth \
     --use_mps_gpu False \
     --model_name cl_monacobert \
     --dataset_name $dataset_name \
     --num_encoder 4 \
     --hidden_size 128 \
-    --batch_size 256 \
+    --batch_size 512 \
     --grad_acc True \
-    --grad_acc_iter 2 \
+    --grad_acc_iter 1 \
     --fivefold True \
     --n_epochs 1000 \
     --cl_lambda 0.1 \
     --use_augment True \
-    --loader_type SIM_DIFF_LOADER \
+    --loader_type SIM_DIFF_LOADER_ABLATION \
     --mask_prob 0 \
     --crop_prob 0 \
     --summarize_prob 0 \
