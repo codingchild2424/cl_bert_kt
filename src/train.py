@@ -9,6 +9,8 @@ from utils import get_optimizers, get_crits, recorder, visualizer
 
 from define_argparser import define_argparser
 
+import os
+
 def main(config, train_loader=None, valid_loader=None, test_loader=None, num_q=None, num_r=None, num_pid=None, num_q_diff=None, num_pid_diff=None, num_negative_q_diff=None, num_negative_pid_diff=None):
     # 0. device setting
 
@@ -68,6 +70,31 @@ def main(config, train_loader=None, valid_loader=None, test_loader=None, num_q=N
 
 # If you used python train.py, then this will be start first
 if __name__ == "__main__":
+    
+    # Make folder setting
+    if not os.path.exists('../checkpoints/'):
+        os.makedirs('../checkpoints/')
+    if not os.path.exists('../datasets/'):
+        os.makedirs('../datasets/')
+        if not os.path.exists('../datasets/assist09/'):
+            os.makedirs('../datasets/assist09/')
+        if not os.path.exists('../datasets/assist12/'):
+            os.makedirs('../datasets/assist12/')
+        if not os.path.exists('../datasets/assist17/'):
+            os.makedirs('../datasets/assist17/')
+        if not os.path.exists('../datasets/algebra05/'):
+            os.makedirs('../datasets/algebra05/')
+        if not os.path.exists('../datasets/bridge_algebra06/'):
+            os.makedirs('../datasets/bridge_algebra06/')
+        if not os.path.exists('../datasets/ednet/'):
+            os.makedirs('../datasets/ednet/')
+        if not os.path.exists('../datasets/homerun20/'):
+            os.makedirs('../datasets/homerun20/')
+    if not os.path.exists('../model_records/'):
+        os.makedirs('../model_records/')
+    if not os.path.exists('../score_records/'):
+        os.makedirs('../score_records/')
+    
     # get config from define_argparser
     config = define_argparser()
 
