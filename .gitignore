@@ -2,6 +2,7 @@
 results/
 src/analysis
 
+!/checkpoints/
 
 *.csv
 *.tsv
