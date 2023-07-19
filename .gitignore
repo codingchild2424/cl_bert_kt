@@ -1,9 +1,13 @@
-checkpoints/
-datasets/
-model_records/
-score_records/
+
 results/
 src/analysis
+
+
+*.csv
+*.tsv
+*.pt
+*.pth
+
 
 __pycache__/
 *.py[cod]

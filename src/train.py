@@ -80,7 +80,9 @@ if __name__ == "__main__":
         test_rmse_scores_list = []
         
         for idx in range(5):
-            train_loader, valid_loader, test_loader, num_q, num_r, num_pid, num_q_diff, num_pid_diff, num_negative_q_diff, num_negative_pid_diff = get_loaders(config, device, idx)
+            train_loader, valid_loader, test_loader, num_q, num_r, \
+                num_pid, num_q_diff, num_pid_diff, num_negative_q_diff, \
+                    num_negative_pid_diff = get_loaders(config, device, idx)
             train_auc_scores, valid_aue_scores, test_auc_scores, \
                 train_rmse_scores, valid_rmse_scores, test_rmse_scores, \
                     best_auc_test_score, best_rmse_test_score, record_time= main(config, train_loader, valid_loader, test_loader, num_q, num_r, num_pid, num_q_diff, num_pid_diff, num_negative_q_diff, num_negative_pid_diff)

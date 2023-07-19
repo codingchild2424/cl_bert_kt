@@ -21,10 +21,10 @@ do
     --n_epochs 1000 \
     --cl_lambda 0.1 \
     --use_augment True \
-    --loader_type SIM_DIFF_LOADER_ABLATION \
-    --mask_prob 0 \
-    --crop_prob 0 \
-    --summarize_prob 0 \
+    --loader_type SIM_DIFF_LOADER \
+    --mask_prob 0.1 \
+    --crop_prob 0.2 \
+    --summarize_prob 0.1 \
     --reverse_prob 0 \
     --permute_prob 0 \
     --segment_permute_prob 0 \
